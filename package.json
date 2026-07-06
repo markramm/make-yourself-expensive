@@ -1,0 +1,27 @@
+{
+  "name": "protect",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/svelte": "^9.0.1",
+    "astro": "^7.0.6",
+    "svelte": "^5.56.4",
+    "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@types/node": "^26.1.0",
+    "playwright": "^1.61.1",
+    "vitest": "^4.1.9"
+  }
+}

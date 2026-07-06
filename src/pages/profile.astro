@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProfileForm from '../components/ProfileForm.svelte';
+---
+
+<BaseLayout title="Profile">
+  <h1>Your profile</h1>
+  <ProfileForm client:load />
+  <p><a href="/brokers">Continue to broker list →</a></p>
+</BaseLayout>

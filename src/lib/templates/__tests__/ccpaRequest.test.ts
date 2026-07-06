@@ -1,0 +1,120 @@
+import { describe, it, expect } from 'vitest';
+import { composeRequest, planDelivery } from '../ccpaRequest';
+import type { Profile } from '../../../stores/profile';
+import type { Broker } from '../../dataset/fetchAndVerify';
+
+const shortProfile: Profile = {
+  fullName: 'Jane Doe',
+  email: 'jane@example.com',
+  phone: '',
+  address: '',
+  city: '',
+  state: '',
+  zip: '',
+  isCaliforniaResident: true,
+};
+
+const longProfile: Profile = {
+  fullName: 'Jane Alexandra Middlename Doe-Smitherington',
+  email: 'jane.alexandra.doesmitherington@example-very-long-domain.com',
+  phone: '+1 (555) 123-4567 ext. 8910',
+  address: '12345 Extremely Long Boulevard Apartment Number 6789-B',
+  city: 'San Francisco',
+  state: 'California',
+  zip: '94103-1234',
+  isCaliforniaResident: true,
+};
+
+function makeBroker(overrides: Partial<Broker> = {}): Broker {
+  return {
+    id: 'test-broker',
+    name: 'Test Broker',
+    domain: 'test-broker.example',
+    category: 'people_search',
+    people_search: true,
+    tier: 'auto',
+    priority: 'crucial',
+    method: 'email',
+    opt_out_url: null,
+    opt_out_email: 'privacy@test-broker.example',
+    phone: null,
+    captcha: false,
+    id_required: false,
+    phone_required: false,
+    charges_fee: false,
+    verification: null,
+    required_fields: ['email'],
+    readd_days: 30,
+    legal_basis: ['ccpa'],
+    link_status: 'unknown',
+    last_verified: null,
+    source: 'test',
+    instructions_md: '',
+    ...overrides,
+  };
+}
+
+describe('composeRequest', () => {
+  it('fills in only the profile fields that are present, omitting blanks', () => {
+    const req = composeRequest(shortProfile, makeBroker(), '2026-07-03');
+    expect(req.body).toContain('Full name: Jane Doe');
+    expect(req.body).toContain('Email: jane@example.com');
+    expect(req.body).not.toContain('Phone:');
+    expect(req.body).not.toContain('Address:');
+    expect(req.toEmail).toBe('privacy@test-broker.example');
+  });
+
+  it('throws rather than composing a request with no confirmed opt_out_email', () => {
+    expect(() => composeRequest(shortProfile, makeBroker({ opt_out_email: null }))).toThrow();
+    expect(() =>
+      composeRequest(shortProfile, makeBroker({ opt_out_email: '<verify: find their DPO address>' })),
+    ).toThrow();
+  });
+});
+
+describe('planDelivery: mailto vs .eml branching', () => {
+  it('uses mailto for a short request', () => {
+    const req = composeRequest(shortProfile, makeBroker(), '2026-07-03');
+    const plan = planDelivery(req);
+    expect(plan.kind).toBe('mailto');
+    if (plan.kind === 'mailto') {
+      expect(plan.href.startsWith('mailto:')).toBe(true);
+      expect(plan.href.length).toBeLessThanOrEqual(1800);
+    }
+  });
+
+  it('falls back to a full, untruncated .eml for a long request rather than truncating', async () => {
+    const req = composeRequest(longProfile, makeBroker(), '2026-07-03');
+    const plan = planDelivery(req);
+    // Sanity: confirm this test actually exercises the long path, not the short one.
+    expect(req.body.length).toBeGreaterThan(200);
+    if (plan.kind === 'mailto') {
+      // If mailto was still chosen, it must be because it's genuinely under the safe length --
+      // never because we silently truncated the body to fit.
+      expect(plan.href.length).toBeLessThanOrEqual(1800);
+      return;
+    }
+    expect(plan.kind).toBe('eml');
+    if (plan.kind === 'eml') {
+      expect(plan.filename).toMatch(/\.eml$/);
+      const text = await plan.blob.text();
+      expect(text).toContain(req.subject);
+      expect(text).toContain(req.body); // full, untruncated body present in the .eml
+      expect(text).toContain(`To: ${req.toEmail}`);
+    }
+  });
+
+  it('forces the .eml path with an artificially long body, and the body is never truncated', async () => {
+    const hugeProfile: Profile = {
+      ...longProfile,
+      address: 'A'.repeat(3000), // guarantees we cross the mailto safe-length threshold
+    };
+    const req = composeRequest(hugeProfile, makeBroker(), '2026-07-03');
+    const plan = planDelivery(req);
+    expect(plan.kind).toBe('eml');
+    if (plan.kind === 'eml') {
+      const text = await plan.blob.text();
+      expect(text).toContain('A'.repeat(3000));
+    }
+  });
+});

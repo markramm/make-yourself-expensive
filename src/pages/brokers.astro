@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BrokerList from '../components/BrokerList.svelte';
+---
+
+<BaseLayout title="Brokers">
+  <h1>Broker list</h1>
+  <BrokerList client:load />
+</BaseLayout>

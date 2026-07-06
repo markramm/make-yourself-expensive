@@ -1,0 +1,72 @@
+---
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} — Protect</title>
+  </head>
+  <body>
+    <nav class="site-nav">
+      <a href="/" class="brand">Protect</a>
+      <a href="/profile">Profile</a>
+      <a href="/brokers">Brokers</a>
+    </nav>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --paper: #ede9e0;
+    --ink: #16130e;
+    --seal: #8a1c1c;
+    --graphite: #6b6459;
+    --rule: #c9c1b2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #16130e;
+      --ink: #ede9e0;
+      --rule: #443f36;
+    }
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.5;
+  }
+  .site-nav {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--rule);
+    font-family: 'Courier New', monospace;
+  }
+  .site-nav a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .site-nav .brand {
+    font-weight: bold;
+  }
+  main {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+</style>

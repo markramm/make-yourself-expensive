@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { PINNED_DATASET } from '../data/dataset-manifest';
+---
+
+<BaseLayout title="Home">
+  <h1>Make yourself expensive to track.</h1>
+
+  <p>
+    Protect is a free tool that walks you through opting out of data brokers — by hand, without
+    handing your data to a paid service to do it for you.
+  </p>
+
+  <h2>Why this is different</h2>
+  <ul>
+    <li>
+      <strong>No server touches your information.</strong> This is a static page. Your name,
+      address, and progress are stored only in this browser, never sent anywhere.
+    </li>
+    <li>
+      <strong>You don't have to take our word for it.</strong> The code is open source — read it
+      yourself, or have someone technical you trust read it.
+    </li>
+    <li>
+      <strong>No account, no signup.</strong> Nothing to create, nothing to lose access to.
+    </li>
+    <li>
+      <strong>The broker data is a public commons</strong>, not something this app owns —
+      it credits and builds on prior public research, and this app is just one way to use it.
+    </li>
+  </ul>
+
+  <p class="build-info">
+    Dataset version <code>{PINNED_DATASET.datasetVersion}</code>, content hash
+    <code>{PINNED_DATASET.contentHash.slice(0, 16)}…</code> — verified against this build on load.
+  </p>
+
+  <p>
+    <a href="/profile">Get started →</a>
+  </p>
+</BaseLayout>
+
+<style>
+  .build-info {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--graphite);
+  }
+</style>
