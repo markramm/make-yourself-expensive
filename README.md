@@ -4,10 +4,11 @@ A free, no-account, no-server tool for opting out of data brokers. Static site (
 Svelte islands) — nothing you enter here is ever transmitted anywhere. Your profile and
 progress live only in this browser's local storage.
 
-This is the operational successor to
-[Make Yourself Expensive](https://github.com/) — same mission, now with a real tiered
-action model (auto/assisted/guided), an on-device profile, and dataset integrity
-verification instead of a static broker list.
+This is the operational successor to Make Yourself Expensive — same mission, now with a
+real tiered action model (auto/assisted/guided), an on-device profile, and dataset
+integrity verification instead of a static broker list. The broker dataset itself lives
+in the `make-yourself-expensive` repo and is consumed here as a compiled, hash-pinned
+artifact.
 
 ## Non-negotiables
 
@@ -52,6 +53,11 @@ npm run astro check
 `make-yourself-expensive` repo's dataset pipeline. Updating it is a deliberate two-step
 process: copy the new `data/brokers.json`, then update `src/data/dataset-manifest.ts`'s
 `datasetVersion`/`contentHash` to match — never one without the other.
+
+## Contributing
+
+See `CONTRIBUTING.md` for the constraints that shape this codebase (PII-in-URL rules,
+dataset-pin update process, the badge-contract test) before opening a PR.
 
 ## License
 
