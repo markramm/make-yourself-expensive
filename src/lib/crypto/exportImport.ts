@@ -141,7 +141,7 @@ function validatePayloadShape(payload: unknown): ExportPayload {
     typeof (payload as any).profile !== 'object' ||
     typeof (payload as any).progress !== 'object'
   ) {
-    throw new ImportError('this file does not look like a Protect backup (missing profile/progress)');
+    throw new ImportError('this file does not look like a Make Yourself Expensive backup (missing profile/progress)');
   }
   return payload as ExportPayload;
 }
@@ -159,7 +159,7 @@ export function parseEnvelopeFromText(text: string): ExportEnvelope {
     !('protect_export_version' in parsed) ||
     !('encrypted' in parsed)
   ) {
-    throw new ImportError('this file does not look like a Protect backup');
+    throw new ImportError('this file does not look like a Make Yourself Expensive backup');
   }
   return parsed as ExportEnvelope;
 }

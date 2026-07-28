@@ -57,7 +57,7 @@ describe('malformed / hostile input handling', () => {
     expect(() => parseEnvelopeFromText('not json at all')).toThrow(ImportError);
   });
 
-  it('rejects JSON that is not a Protect envelope', () => {
+  it('rejects JSON that is not a recognized backup envelope', () => {
     expect(() => parseEnvelopeFromText(JSON.stringify({ foo: 'bar' }))).toThrow(ImportError);
   });
 

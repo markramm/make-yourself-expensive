@@ -9,7 +9,7 @@
 export const PINNED_DATASET = {
   datasetVersion: '0.1.7',
   contentHash: 'sha256:97bc26d198c2484d7d6c9d543a1820302deb16c7ae50e15a34f473cf9c05273d',
-  // Same-origin static path Protect fetches at runtime -- update if the dataset is hosted
+  // Same-origin static path the app fetches at runtime -- update if the dataset is hosted
   // elsewhere (CDN, GitHub release asset, etc).
   url: '/data/brokers.json',
 } as const;
