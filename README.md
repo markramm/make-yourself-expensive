@@ -1,14 +1,19 @@
-# Protect
+# Make Yourself Expensive
 
-A free, no-account, no-server tool for opting out of data brokers. Static site (Astro +
-Svelte islands) — nothing you enter here is ever transmitted anywhere. Your profile and
-progress live only in this browser's local storage.
+A free, no-account, no-server toolkit for making yourself a harder, more expensive target
+for surveillance and data-harvesting. Static site (Astro + Svelte islands) — nothing you
+enter here is ever transmitted anywhere. Your profile and progress live only in this
+browser's local storage.
 
-This is the operational successor to Make Yourself Expensive — same mission, now with a
-real tiered action model (auto/assisted/guided), an on-device profile, and dataset
-integrity verification instead of a static broker list. The broker dataset itself lives
-in the `make-yourself-expensive` repo and is consumed here as a compiled, hash-pinned
-artifact.
+This is the umbrella site: **Opt-Out** (data broker removal — the first section, and the
+one this repo currently implements) sits alongside planned sections on hardening your own
+devices (phone, laptop/desktop) and other tools for reducing your footprint. It replaces an
+earlier single-purpose opt-out-only tool of the same name.
+
+The broker dataset the Opt-Out section consumes lives in its own repo,
+[`data-broker-registry`](https://github.com/markramm/data-broker-registry) — deliberately
+separate so it can be reused by other tools, run locally, or forked independently of this
+site.
 
 ## Non-negotiables
 
@@ -17,8 +22,9 @@ artifact.
    build and checked against the fetched data on every load — see
    `src/lib/dataset/fetchAndVerify.ts`.
 3. **No account, no signup.**
-4. **The dataset is a commons**, decoupled from this app — see the `make-yourself-expensive`
-   repo's `data/brokers/` and `broker.schema.json`. This app only ever fetches the compiled,
+4. **The dataset is a commons**, decoupled from this app — see the
+   [`data-broker-registry`](https://github.com/markramm/data-broker-registry) repo's
+   `data/brokers/` and `broker.schema.json`. This app only ever fetches the compiled,
    hash-pinned artifact, never the raw source.
 5. **PII never enters a URL.** No query-param prefills, anywhere, ever.
 
@@ -50,9 +56,15 @@ npm run astro check
 ## Dataset
 
 `public/data/brokers.json` is a copy of the compiled artifact from the
-`make-yourself-expensive` repo's dataset pipeline. Updating it is a deliberate two-step
-process: copy the new `data/brokers.json`, then update `src/data/dataset-manifest.ts`'s
-`datasetVersion`/`contentHash` to match — never one without the other.
+[`data-broker-registry`](https://github.com/markramm/data-broker-registry) repo's dataset
+pipeline. Updating it is a deliberate two-step process: copy the new `data/brokers.json`,
+then update `src/data/dataset-manifest.ts`'s `datasetVersion`/`contentHash` to match — never
+one without the other.
+
+## Deploying
+
+See `DEPLOYING.md` — static, hosted via GitHub Pages at
+`become-expensive.transparencycascade.org`.
 
 ## Contributing
 
@@ -62,4 +74,4 @@ dataset-pin update process, the badge-contract test) before opening a PR.
 ## License
 
 MIT. See `LICENSE`. The broker dataset itself is licensed separately (CC BY-NC-SA 4.0) in
-the `make-yourself-expensive` repo.
+the `data-broker-registry` repo.

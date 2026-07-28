@@ -31,7 +31,7 @@ take our word for it." Concretely, that means:
 
 ## Updating the broker dataset
 
-The dataset lives in a separate repo (`make-yourself-expensive`, `data/brokers/` +
+The dataset lives in a separate repo (`data-broker-registry`, `data/brokers/` +
 `broker.schema.json`) on purpose -- this app only ever consumes the *compiled* artifact, per
 non-negotiable #4 (the dataset is a commons, decoupled from any one frontend). To pull in a
 new dataset release:
@@ -79,5 +79,5 @@ Run `npm test` before opening a PR. At minimum:
 ## License
 
 MIT (see `LICENSE`). The broker dataset this app consumes is licensed separately
-(CC BY-NC-SA 4.0) in the `make-yourself-expensive` repo -- don't add dataset content
+(CC BY-NC-SA 4.0) in the `data-broker-registry` repo -- don't add dataset content
 directly to this repo; contribute it upstream instead.
