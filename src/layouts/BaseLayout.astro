@@ -1,8 +1,14 @@
 ---
 interface Props {
-  title: string;
+  title?: string;
+  frontmatter?: { title?: string };
 }
-const { title } = Astro.props;
+// .astro pages pass `title` directly (<BaseLayout title="...">); Markdown pages using
+// `layout:` in frontmatter get all their frontmatter nested under `Astro.props.frontmatter`
+// instead -- support both call conventions rather than picking one and silently breaking
+// the other.
+const { title, frontmatter } = Astro.props;
+const pageTitle = title ?? frontmatter?.title ?? '';
 ---
 
 <html lang="en">
@@ -11,13 +17,15 @@ const { title } = Astro.props;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title} — Make Yourself Expensive</title>
+    <title>{pageTitle} — Make Yourself Expensive</title>
   </head>
   <body>
     <nav class="site-nav">
       <a href="/" class="brand">Make Yourself Expensive</a>
-      <a href="/profile">Profile</a>
       <a href="/brokers">Opt-Out</a>
+      <a href="/harden/">Harden</a>
+      <a href="/resources">Resources</a>
+      <a href="/profile">Profile</a>
     </nav>
     <main>
       <slot />
@@ -68,5 +76,42 @@ const { title } = Astro.props;
     max-width: 42rem;
     margin: 0 auto;
     padding: 1.5rem;
+  }
+
+  /* Prose styling for Markdown-rendered guide content (src/pages/harden/*.md) */
+  main h1 {
+    font-size: 1.7rem;
+    line-height: 1.25;
+  }
+  main h2 {
+    font-size: 1.25rem;
+    margin-top: 2rem;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.3rem;
+  }
+  main p,
+  main li {
+    line-height: 1.6;
+  }
+  main blockquote {
+    border-left: 3px solid var(--seal);
+    margin: 1rem 0;
+    padding: 0.25rem 0 0.25rem 1rem;
+    color: var(--graphite);
+  }
+  main a {
+    color: var(--seal);
+  }
+  main code {
+    font-family: 'Courier New', monospace;
+    background: var(--rule);
+    padding: 0.1rem 0.3rem;
+    border-radius: 2px;
+    font-size: 0.9em;
+  }
+  main hr {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 2rem 0;
   }
 </style>

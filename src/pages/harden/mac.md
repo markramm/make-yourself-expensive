@@ -1,0 +1,70 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: Harden Your Mac
+---
+
+# Harden Your Mac: Your Laptop Probably Isn't As Encrypted As You Think
+
+There's a comforting thing people say about modern Macs: "they're encrypted by default." It's the kind of true-sounding statement that lets you stop worrying. And it's exactly wrong enough to get someone hurt.
+
+Here's the precise version, in Apple's own words. Yes, the drive in a modern Mac is encrypted at rest. But unless you've turned on a feature called **FileVault**, the key that unlocks that encryption is protected "only by the hardware" — not by your password. In plain terms: if FileVault is off, your Mac decrypts *itself* the moment it powers on. There's no human secret in the way. Anyone who has your laptop has your data, login screen or not. The encryption is real, but it's guarding the door with the key taped to the frame.
+
+That's the whole reason this piece exists. A phone is encrypted and tied to your passcode automatically. A Mac makes you take one step first — and most people never take it. So this isn't about hiding. It's about cost: turning a laptop that opens for anyone into one that costs serious money and time to crack. Let's start with the step nobody told you about.
+
+## Do this now: turn on FileVault
+
+> **System Settings → Privacy & Security → FileVault → Turn On.**
+
+That's it. That single switch re-wraps your encryption key so it's protected by your password *and* the machine — instead of the machine alone. Now a stolen or seized Mac is a safe whose combination lives only in your head.
+
+It will ask how you want to handle a recovery key. You get a choice: store it in your iCloud account (convenient — Apple can help you recover it, which also means Apple holds a recovery path that a subpoena could reach), or generate a **local recovery key** that no one else holds. For most people the local key is the stronger choice; write it down on paper and put it somewhere safe. The flip side of "no one else can unlock this" is "no one else can rescue you," so the paper matters.
+
+One more pairing while you're here: make your login password an actual passphrase, not a short word. EFF's rule of thumb is six random words. Your encryption is only ever as strong as the password standing in front of it.
+
+## The one big idea: off is a different kind of locked
+
+The same truth that governs phones governs laptops, and it's worth saying plainly:
+
+**A Mac that is powered all the way off is in a fundamentally stronger state than a Mac that's just asleep with the lid closed.**
+
+When your Mac is awake — or asleep but unlocked-since-boot — the FileVault key has already been derived and is sitting in memory, and the disk is mounted and readable. Close the lid and it's still in that state, just dimmed. But shut it *all the way down*, and the key is gone from memory; the disk is sealed until someone types your passphrase. It's the laptop version of the same thing that protects a powered-off phone.
+
+This matters most at a border or before any moment of risk. The instinct is to close the lid. The right move is **Shut Down** — not sleep, not lid-close. EFF says it directly: power your devices fully off before a border checkpoint, because it defeats a whole class of attacks that only work on a machine that's already running.
+
+## The everyday baseline: a few more settings worth your time
+
+**Watch what you grant.** *System Settings → Privacy & Security.* The dangerous permissions to hand out carefully are **Accessibility**, **Full Disk Access**, **Screen Recording**, and **Input Monitoring** — these let an app control your whole computer, read everything, watch your screen, or log your keystrokes. Most apps that ask don't need them. Be stingy.
+
+**Turn down Apple's data collection.** In the same Privacy & Security area: turn off **Analytics & Improvements** (sharing with Apple and with developers) and **Apple Advertising → Personalized Ads.** Apple is genuinely better on privacy than most — but it still runs an ad business, and "better than most" isn't "off."
+
+**Use Firefox with uBlock Origin.** On a Mac, unlike an iPhone, you get the real thing: desktop Firefox plus the uBlock Origin extension blocks ads and trackers before they load. It's the single biggest browsing-privacy upgrade available, and it's free.
+
+**Know the firewall's limit.** Turn on the firewall (*System Settings → Network → Firewall*), but understand what it does: it blocks unwanted *incoming* connections. It does **not** stop an app already on your Mac from quietly sending your data *out*. If that's a concern, a tool like the free **LuLu** watches outbound traffic and asks your permission.
+
+**Let it update itself.** Turn on automatic updates, including Rapid Security Responses. The most-attacked part of your Mac is the web browser, and these patches close those holes within hours, with no effort from you. After FileVault, it's the highest-value habit there is.
+
+## If you're higher-risk: organizers, immigrants, journalists
+
+If your laptop could be searched or seized, a few additions — stated plainly, with no false comfort.
+
+**The configuration that actually protects you is simple to state:** FileVault on, a long passphrase, and the laptop **powered all the way off.** In that state, the public evidence says forensic tools get nothing but scrambled data, because the key that would unscramble it isn't anywhere on the machine. A laptop seized while *running or asleep* is a far weaker position — the disk is already open. So before any real risk: shut down.
+
+**An honest word on what we know about cracking Macs:** less than you'd think. The dramatic leaked documents about phone-cracking tools are about *phones* — there's no public evidence of an equivalent push-button tool that breaks a powered-off, FileVault-on Apple Silicon Mac. That's reassuring, but it's reassurance by absence, not a guarantee, and these capabilities change. Don't get comfortable; get powered-off.
+
+**On the law, don't expect a shield.** Whether you can be legally forced to give up your password is genuinely unsettled — courts split on it, and these fights started with laptops, not phones. People have sat in jail for *years* for refusing a court's decryption order. And the border is a separate, weaker regime: U.S. citizens can't be denied entry for refusing to unlock, but green-card holders face pressure and **visa-holders can be turned away.** The same refusal costs different people very differently. The EFF's practical advice is the boring, durable kind: carry a clean travel device, keep sensitive material in encrypted cloud storage rather than on the laptop, and power all the way off before the checkpoint.
+
+**If you might be a target of government-grade spyware,** turn on **Lockdown Mode** (*Privacy & Security → Lockdown Mode*). It shrinks the attack surface these tools exploit, at the cost of breaking some conveniences. It's for people with specific reason to worry, not everyone — and if Apple ever sends you a notification that you've been targeted, treat it as real and get expert help (Access Now runs a free, 24/7 helpline for activists and journalists at help@accessnow.org).
+
+## The honest bottom line
+
+What actually moves the needle: **FileVault, a long passphrase, automatic updates, and the habit of shutting all the way down.** Not theater.
+
+What's oversold: "Macs are encrypted by default, so I'm fine." That sentence is the most dangerous thing in this whole piece, because it's *almost* true — and the gap between almost and actually is one switch you have to flip yourself.
+
+And the truth under all of it: **for a person who might be searched, the physical state of the laptop protects you more reliably than the law does** — especially if you're not a citizen, because that's where the legal protections are thinnest. Off beats asleep. A passphrase beats a guess. Carrying less beats carrying everything.
+
+You don't have to do all of this today. Turn on FileVault this afternoon. Come back for the rest.
+
+---
+
+*This is part of a [series on hardening the devices you actually carry](/harden/). Next: [Windows](/harden/windows/). Companion tool — a free, no-account walk-through for getting your data off the brokers — lives in the [Opt-Out section](/brokers/) of this site. The deepest reference is the [Electronic Frontier Foundation's Surveillance Self-Defense](https://ssd.eff.org).*

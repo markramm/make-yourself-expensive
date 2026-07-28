@@ -1,0 +1,72 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: Harden Your Windows PC
+---
+
+# Harden Your Windows PC: The Encryption You Have Probably Isn't the One You Need
+
+In early 2024, a security researcher took a stock Windows laptop, wired a four-dollar Raspberry Pi to a chip on its motherboard, and pulled the laptop's disk-encryption key out of it in about **forty-three seconds.** No password guessing. No special access. Just a cheap gadget and the right spot to clip onto.
+
+The unsettling part isn't that it's possible. It's that the laptop was using BitLocker — Windows' encryption — exactly the way Microsoft sets it up by default. (The clip-on attack needs a *discrete* TPM chip sitting on an exposed bus; many newer machines put the TPM inside the CPU, where it can't be sniffed this way. The fix below — a pre-boot PIN — costs nothing and protects you on either kind of hardware.) The owner would have told you, correctly, that their drive was encrypted. They'd have been running the weak version of it without ever knowing there was a strong one.
+
+That's the theme for Windows, and it runs deeper than any one setting: **the protections you think you have are often the watered-down versions, and Microsoft holds more of the keys than you'd guess.** So this isn't about hiding. It's about closing the specific gaps that are open by default — making yourself genuinely expensive to surveil instead of just feeling that way. Windows menus shift between editions and versions, so search the Settings app for the bold words if a path doesn't match.
+
+## Do this now: find out if your disk is actually encrypted — and who holds the key
+
+Two separate questions, and most people don't know the answer to either.
+
+**First, is it encrypted at all?** Go to **Settings → Privacy & security → Device encryption.** If you see the switch and it's on, good. If you don't see that option, you may be on a version of Windows where full encryption (called BitLocker) was reserved for the Pro edition — historically *not* included on Home. Check by searching for "**manage-bde**" — but the simple version is: if you can't confirm your drive is encrypted, it may not be, and that's the first thing to fix.
+
+**Second — and this is the part nobody mentions — who has the recovery key?** If you set up Windows with a Microsoft account, Windows quietly uploaded your 48-digit recovery key to Microsoft's servers. That's convenient if you get locked out. It also means **Microsoft holds a key to your disk** — one that a subpoena can reach. In a federal case this year, that's exactly how investigators got into seized laptops: they asked Microsoft for the escrowed keys. You can see your key (and understand what Microsoft is holding) at **account.microsoft.com/devices/recoverykey.**
+
+For most people, simply *knowing* these two facts is the win. For the higher-risk section below, we'll fix both.
+
+## The one big idea: off, not asleep — and a PIN before Windows even loads
+
+Two habits do most of the protective work on a Windows laptop.
+
+**The first is the one from every other device in this series: shut down, don't sleep.** When your PC is running or sleeping, the encryption keys are sitting in memory, and there are well-documented ways — cold-boot attacks, attacks over the Thunderbolt port — to read them straight out of RAM. Hibernate is better than sleep; fully **powered off** is best, because then the keys aren't in memory at all. Before any moment of risk, shut it all the way down.
+
+**The second is specific to Windows, and it's the fix for that forty-three-second attack: add a startup PIN.** The cheap-gadget trick works because, by default, the key travels across a little internal wire as the machine boots, where it can be intercepted. A **pre-boot PIN** means the key isn't released until *after* you type the PIN — so there's nothing on the wire to grab.
+
+**A PC that is off, with a strong passphrase, and a PIN required before Windows even starts loading, is a genuinely hard target.** That sentence is the whole game. (Setting the PIN takes a few steps through Group Policy; it's the one item here worth following a current step-by-step for, since Microsoft moves it around.)
+
+## The everyday baseline: the leaks worth closing
+
+**Turn off optional telemetry.** *Settings → Privacy & security → Diagnostics & feedback →* turn **Optional diagnostic data** off, leaving it at "Required." Be honest with yourself about what this does and doesn't do: Windows collects far more about you than a Mac does, and on a normal home edition you **cannot** turn it all the way off — the floor stays on. Turning off the *optional* layer still meaningfully reduces what leaves your machine. It's worth doing; it's not a full off-switch, and anyone who tells you otherwise is selling something.
+
+**Kill the advertising ID.** *Settings → Privacy & security → Recommendations & offers →* turn off "**Let apps show me personalized ads using my advertising ID**." (On older, un-updated Windows 11 installs this still lives under *General*; if you don't see it, search the Settings app for the bold phrase.) It's the desktop cousin of the name tag from the phone pieces — the same cross-app tracking key, on by default.
+
+**Use Firefox with uBlock Origin** instead of Edge's defaults — the real ad-and-tracker blocker, the same desktop advantage Macs have.
+
+**Leave Defender on, and skip the paid antivirus.** Windows' built-in Microsoft Defender is now genuinely excellent — independent labs score it at the top. For a normal user, a third-party antivirus suite usually adds cost and *reduces* security by elbowing Defender aside. Keep Defender and SmartScreen on, keep automatic updates on, and you've covered most of the malware threat for free.
+
+**Deal with Recall, if you have it.** On newer "Copilot+" PCs, a feature called **Recall** periodically screenshots everything you do and stores it so it's searchable later. When researchers first looked, it was keeping those screenshots in a plain, unencrypted file — a complete searchable history of your screen, sitting there for anyone who got into the machine. Microsoft has since made it opt-in and encrypted, but if you're not using it, turn it off (*Settings → Privacy & security → Recall & snapshots*) or remove it. A seized laptop with Recall running is a diary you didn't know you were keeping.
+
+## If you're higher-risk: organizers, immigrants, journalists
+
+If your laptop could be searched or seized, the additions — plainly, with no false comfort.
+
+**Fix the two BitLocker weaknesses from the top of this piece.** Add a pre-boot PIN (so the boot-time key can't be sniffed off the wire), then deal with the escrowed key: delete it from Microsoft's servers *and* rotate the key on your machine so the copy Microsoft once held is dead, keeping the new recovery key offline on paper. The goal is simple — **the only key to your disk should be the one in your head and the one in your drawer, not the one on Microsoft's servers.**
+
+**Consider getting off the Microsoft account entirely.** A local Windows account doesn't hand your recovery key or tie your activity to Microsoft's servers the same way. Microsoft keeps making local accounts harder to set up, so this takes some determination — but for high-risk use it removes a whole category of exposure.
+
+**Prefer a passphrase over the fingerprint/face sign-in** on a high-risk machine, for the same reason as on phones: under current U.S. law, you're more likely to be compelled to unlock with your body than with something you've memorized. That law is unsettled and split — don't treat it as a guarantee — but the practical lean is clear.
+
+**At the border, the law is weaker, and it depends on who you are.** U.S. citizens can't be denied entry for refusing to unlock, though the laptop can be seized for weeks. Green-card holders face pressure; **visa-holders and visa-waiver travelers can be turned away** for refusing. Same refusal, very different stakes. EFF's durable advice: carry a clean travel device, keep sensitive material in encrypted cloud storage rather than on the laptop, and power all the way off before the checkpoint.
+
+**For the highest-risk single sessions, there's Tails** — an entire operating system you boot from a USB stick. It runs in memory, routes everything through the Tor network, and forgets everything the moment you shut down. It's not a daily computer; it's a clean, amnesiac room you can step into for one sensitive task and leave with no trace. A different tool for a different job, worth knowing exists.
+
+## The honest bottom line
+
+What actually moves the needle: **confirming your disk is encrypted, adding a pre-boot PIN, getting your recovery key out of Microsoft's hands, keeping Defender and updates on, and the habit of shutting all the way down.** Not theater.
+
+What's oversold: "my drive is encrypted, so I'm fine." Maybe — but possibly with the weak, default configuration, and possibly with Microsoft holding a copy of the key. And "I disabled all the telemetry" — you can't, fully, on a consumer edition; reduce it and move on.
+
+The truth under all of it: **for a person who might be searched, the physical state of the device and who holds the keys protect you more reliably than the law does** — especially if you're not a citizen, because that's where the legal protections are thinnest. Off beats asleep. A PIN before boot beats a key on the wire. A key in your head beats a key on Microsoft's servers.
+
+You don't have to do all of this today. Find out whether your disk is encrypted, and who holds the key, this afternoon. Come back for the rest.
+
+---
+
+*This is part of a [series on hardening the devices you actually carry](/harden/). Companion tool — a free, no-account walk-through for getting your data off the brokers — lives in the [Opt-Out section](/brokers/) of this site. The deepest reference is the [Electronic Frontier Foundation's Surveillance Self-Defense](https://ssd.eff.org).*
