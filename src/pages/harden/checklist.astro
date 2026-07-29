@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HardenChecklist from '../../components/HardenChecklist.svelte';
+import { HARDEN_CHECKLISTS } from '../../lib/harden/checklists';
+---
+
+<BaseLayout title="Hardening Checklist">
+  <h1>Hardening checklist</h1>
+  <p class="intro">
+    Already know the settings? Check off what's done on each device. Want the reasoning
+    behind an item — why it matters, what it actually protects against — the
+    <a href="/harden/">guides</a> cover that.
+  </p>
+
+  {HARDEN_CHECKLISTS.map((guide) => (
+    <section>
+      <a class="device-link" href={guide.href}>{guide.title} guide →</a>
+      <HardenChecklist
+        client:load
+        device={guide.device}
+        title={guide.title}
+        items={guide.items}
+        showDeviceHeading={true}
+      />
+    </section>
+  ))}
+</BaseLayout>
+
+<style>
+  .intro {
+    color: var(--graphite, #6b6459);
+    font-size: 0.95rem;
+    max-width: 32rem;
+  }
+  section {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--rule, #c9c1b2);
+  }
+  section:last-child {
+    border-bottom: none;
+  }
+  .device-link {
+    font-size: 0.85rem;
+    color: var(--seal, #8a1c1c);
+  }
+</style>

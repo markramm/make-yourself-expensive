@@ -3,6 +3,11 @@ layout: ../../layouts/BaseLayout.astro
 title: Harden Your Windows PC
 ---
 
+import HardenChecklist from '../../components/HardenChecklist.svelte';
+import { checklistFor } from '../../lib/harden/checklists';
+
+export const guide = checklistFor('windows');
+
 # Harden Your Windows PC: The Encryption You Have Probably Isn't the One You Need
 
 In early 2024, a security researcher took a stock Windows laptop, wired a four-dollar Raspberry Pi to a chip on its motherboard, and pulled the laptop's disk-encryption key out of it in about **forty-three seconds.** No password guessing. No special access. Just a cheap gadget and the right spot to clip onto.
@@ -66,6 +71,12 @@ What's oversold: "my drive is encrypted, so I'm fine." Maybe — but possibly wi
 The truth under all of it: **for a person who might be searched, the physical state of the device and who holds the keys protect you more reliably than the law does** — especially if you're not a citizen, because that's where the legal protections are thinnest. Off beats asleep. A PIN before boot beats a key on the wire. A key in your head beats a key on Microsoft's servers.
 
 You don't have to do all of this today. Find out whether your disk is encrypted, and who holds the key, this afternoon. Come back for the rest.
+
+## Your checklist
+
+Already know this stuff? Just check off what's done — no need to reread.
+
+<HardenChecklist client:load device={guide.device} title={guide.title} items={guide.items} />
 
 ---
 

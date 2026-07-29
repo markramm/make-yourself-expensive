@@ -3,6 +3,11 @@ layout: ../../layouts/BaseLayout.astro
 title: Harden Your iPhone
 ---
 
+import HardenChecklist from '../../components/HardenChecklist.svelte';
+import { checklistFor } from '../../lib/harden/checklists';
+
+export const guide = checklistFor('iphone');
+
 # Harden Your iPhone: The Five Settings That Actually Matter
 
 In December 2024, the Federal Trade Commission caught a data broker called Mobilewalla holding more than 500 million advertising IDs paired with people's precise location — and selling the ability to draw a circle around a building and get a list of every phone that had been inside it. The FTC's own example of what that buys you: a segment of "visitors to pregnancy centers." Roughly 60% of that location data came from ordinary phone apps, scooped up through the ad auctions that fire every time an app loads a banner.
@@ -72,6 +77,12 @@ What's oversold: the tracking toggles help, but they don't stop everything — c
 And the one truth under all of it, the one worth carrying out of this piece: **for a person who might be searched, the physical state of the device protects you more reliably than the law does** — especially if you're not a citizen, because that's exactly where the legal protections are thinnest. Off beats locked. A passphrase beats a face. Carrying less beats carrying a fortress.
 
 You don't have to do all of this today. Do the power-off habit and Advanced Data Protection this afternoon. Come back for the rest.
+
+## Your checklist
+
+Already know this stuff? Just check off what's done — no need to reread.
+
+<HardenChecklist client:load device={guide.device} title={guide.title} items={guide.items} />
 
 ---
 

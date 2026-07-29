@@ -2,6 +2,12 @@
   import { profileStore, PROFILE_SCHEMA_VERSION, migrateProfile, type Profile } from '../stores/profile';
   import { progressStore, PROGRESS_SCHEMA_VERSION, migrateProgress, type ProgressMap } from '../stores/progress';
   import {
+    hardenProgressStore,
+    HARDEN_PROGRESS_SCHEMA_VERSION,
+    migrateHardenProgress,
+    type HardenProgressMap,
+  } from '../stores/hardenProgress';
+  import {
     exportEncrypted,
     exportPlaintext,
     importEnvelope,
@@ -33,7 +39,12 @@
     const payload: ExportPayload = {
       profile: profileStore_snapshot(),
       progress: $progressStore,
-      schema_versions: { profile: PROFILE_SCHEMA_VERSION, progress: PROGRESS_SCHEMA_VERSION },
+      harden: $hardenProgressStore,
+      schema_versions: {
+        profile: PROFILE_SCHEMA_VERSION,
+        progress: PROGRESS_SCHEMA_VERSION,
+        harden: HARDEN_PROGRESS_SCHEMA_VERSION,
+      },
     };
 
     const envelope = encryptOnSave
@@ -110,6 +121,7 @@
 
     let incomingProgress: ProgressMap;
     let incomingProfile: Profile;
+    let incomingHarden: HardenProgressMap | null = null;
     try {
       incomingProgress = migrateProgress(
         pendingPayload.progress,
@@ -119,6 +131,14 @@
         pendingPayload.profile,
         pendingPayload.schema_versions?.profile ?? 0,
       );
+      // harden is optional -- older exports, or a session that never touched the Harden
+      // section, simply won't have it. Absence is not an error.
+      if (pendingPayload.harden) {
+        incomingHarden = migrateHardenProgress(
+          pendingPayload.harden,
+          pendingPayload.schema_versions?.harden ?? 0,
+        );
+      }
     } catch (err) {
       loadError = err instanceof Error ? err.message : 'could not read this backup';
       return;
@@ -126,8 +146,10 @@
 
     if (mergeChoice === 'replace') {
       progressStore.replaceAll(incomingProgress);
+      if (incomingHarden) hardenProgressStore.replaceAll(incomingHarden);
     } else {
       progressStore.merge(incomingProgress);
+      if (incomingHarden) hardenProgressStore.merge(incomingHarden);
     }
 
     profileStore.replaceAll(incomingProfile);

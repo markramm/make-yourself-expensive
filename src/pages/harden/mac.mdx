@@ -3,6 +3,11 @@ layout: ../../layouts/BaseLayout.astro
 title: Harden Your Mac
 ---
 
+import HardenChecklist from '../../components/HardenChecklist.svelte';
+import { checklistFor } from '../../lib/harden/checklists';
+
+export const guide = checklistFor('mac');
+
 # Harden Your Mac: Your Laptop Probably Isn't As Encrypted As You Think
 
 There's a comforting thing people say about modern Macs: "they're encrypted by default." It's the kind of true-sounding statement that lets you stop worrying. And it's exactly wrong enough to get someone hurt.
@@ -64,6 +69,12 @@ What's oversold: "Macs are encrypted by default, so I'm fine." That sentence is 
 And the truth under all of it: **for a person who might be searched, the physical state of the laptop protects you more reliably than the law does** — especially if you're not a citizen, because that's where the legal protections are thinnest. Off beats asleep. A passphrase beats a guess. Carrying less beats carrying everything.
 
 You don't have to do all of this today. Turn on FileVault this afternoon. Come back for the rest.
+
+## Your checklist
+
+Already know this stuff? Just check off what's done — no need to reread.
+
+<HardenChecklist client:load device={guide.device} title={guide.title} items={guide.items} />
 
 ---
 

@@ -3,6 +3,11 @@ layout: ../../layouts/BaseLayout.astro
 title: Harden Your Android
 ---
 
+import HardenChecklist from '../../components/HardenChecklist.svelte';
+import { checklistFor } from '../../lib/harden/checklists';
+
+export const guide = checklistFor('android');
+
 # Harden Your Android: The Settings That Make You Expensive
 
 Remember Mobilewalla — the broker the FTC caught in 2024 holding 500 million people's locations, drawn from the ad auctions inside ordinary phone apps? On Android, there's a single number sitting at the center of that whole machine, and you can delete it.
@@ -70,6 +75,12 @@ What's oversold: the tracking toggles help, but they don't make you invisible �
 And the one truth under all of it: **for a person who might be searched, the physical state of the device protects you more reliably than the law does** — especially if you're not a citizen, because that's exactly where the legal protections are thinnest. Off beats locked. A passphrase beats a fingerprint. Carrying less beats carrying a fortress.
 
 You don't have to do all of this today. Delete the ad ID and learn the power-off habit this afternoon. Come back for the rest.
+
+## Your checklist
+
+Already know this stuff? Just check off what's done — no need to reread.
+
+<HardenChecklist client:load device={guide.device} title={guide.title} items={guide.items} />
 
 ---
 

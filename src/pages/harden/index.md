@@ -48,6 +48,9 @@ Four pieces, one per device, each in two tiers, each starting with the single hi
 - **[Your Mac](/harden/mac/)** — turn on FileVault, because "encrypted by default" is the half-truth that gets people hurt.
 - **[Your Windows PC](/harden/windows/)** — find out whether your disk is actually encrypted, and who's holding the key (it may be Microsoft).
 
+Already know the settings and just want to track what's done? Skip straight to the
+[hardening checklist](/harden/checklist/) — no rereading required.
+
 And alongside the series, a companion tool: a free, no-account, nothing-leaves-your-browser walk-through for getting your existing data *off* the brokers — the cleanup to go with the hardening. It's the [Opt-Out section](/brokers/) of this same site.
 
 None of this makes you disappear. That's not the goal, and anyone promising it is selling something. The goal is smaller and more achievable and, honestly, more powerful: to stop being cheap. To make the people and systems that traffic in you spend more than you're worth.

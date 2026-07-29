@@ -4,7 +4,7 @@
  * rather than reusing the old app's `mye.v1`.
  */
 import { writable, derived, type Readable } from 'svelte/store';
-import { loadVersioned, saveVersioned, runMigrations, type Migration } from './versionedStorage';
+import { loadVersioned, saveVersioned, runMigrations, mergeDoneMaps, type Migration } from './versionedStorage';
 
 const STORAGE_KEY = 'protect.v1.progress';
 
@@ -88,13 +88,7 @@ export function isDone(progress: ProgressMap, brokerId: string): boolean {
  * marked not-done (e.g. an older backup from before they finished it here).
  */
 export function mergeProgress(current: ProgressMap, incoming: ProgressMap): ProgressMap {
-  const merged: ProgressMap = { ...current };
-  for (const [id, entry] of Object.entries(incoming)) {
-    if (!merged[id] || (entry.done && !merged[id].done)) {
-      merged[id] = entry;
-    }
-  }
-  return merged;
+  return mergeDoneMaps(current, incoming);
 }
 
 /** Derived tally: { done, total } over a given list of broker ids. */

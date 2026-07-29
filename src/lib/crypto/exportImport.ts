@@ -14,13 +14,19 @@ export interface ExportPayload {
   profile: Record<string, unknown>;
   progress: Record<string, unknown>;
   /**
-   * Per-store schema versions at the time of export (see stores/profile.ts and
-   * stores/progress.ts for their PROFILE_SCHEMA_VERSION / PROGRESS_SCHEMA_VERSION constants).
+   * Hardening-checklist progress (see stores/hardenProgress.ts). Optional and absent on
+   * exports written before this field existed, or from a session where the reader never
+   * touched the Harden section -- an absent field means "nothing to import," not an error.
+   */
+  harden?: Record<string, unknown>;
+  /**
+   * Per-store schema versions at the time of export (see stores/profile.ts,
+   * stores/progress.ts, and stores/hardenProgress.ts for their *_SCHEMA_VERSION constants).
    * Optional and absent on exports written before this field existed -- treat a missing
    * entry as schema_version 0 for that store, same convention loadVersioned() uses for
    * pre-versioning localStorage data.
    */
-  schema_versions?: { profile?: number; progress?: number };
+  schema_versions?: { profile?: number; progress?: number; harden?: number };
 }
 
 interface EncryptedEnvelope {

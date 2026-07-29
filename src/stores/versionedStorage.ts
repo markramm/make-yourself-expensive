@@ -79,3 +79,25 @@ export function saveVersioned<T>(key: string, currentVersion: number, data: T): 
   const record: VersionedRecord<T> = { schema_version: currentVersion, data };
   localStorage.setItem(key, JSON.stringify(record));
 }
+
+/** The shape shared by ProgressMap (stores/progress.ts) and HardenProgressMap (stores/hardenProgress.ts). */
+export interface DoneMap {
+  [id: string]: { done: boolean; doneAt: string | null };
+}
+
+/**
+ * Combines two "done" maps of the same shape: an id counts as done if it's done in EITHER
+ * map. Never un-marks something already done in `current`, even if `incoming` has it marked
+ * not-done (e.g. an older backup from before the reader finished it here). Shared by
+ * progressStore.merge() and hardenProgressStore.merge() since both track the same
+ * {done, doneAt} shape, just for different kinds of items.
+ */
+export function mergeDoneMaps<T extends DoneMap>(current: T, incoming: T): T {
+  const merged = { ...current };
+  for (const [id, entry] of Object.entries(incoming)) {
+    if (!merged[id] || (entry.done && !merged[id].done)) {
+      (merged as DoneMap)[id] = entry;
+    }
+  }
+  return merged;
+}
