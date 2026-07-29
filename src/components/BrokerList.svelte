@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { fetchAndVerifyDataset, type Broker, type DatasetMeta } from '../lib/dataset/fetchAndVerify';
-  import { PINNED_DATASET } from '../data/dataset-manifest';
+  import type { Broker, DatasetMeta } from '../lib/dataset/fetchAndVerify';
+  import { loadDataset } from '../lib/dataset/useDataset';
   import { profileStore } from '../stores/profile';
   import { progressStore, isDone } from '../stores/progress';
   import BrokerRow from './BrokerRow/BrokerRow.svelte';
@@ -20,20 +20,12 @@
   let search = '';
 
   onMount(async () => {
-    try {
-      const result = await fetchAndVerifyDataset(PINNED_DATASET.url);
-      brokers = result.brokers;
-      meta = result.meta;
-      verified = result.verified;
-      integrityWarning = result.integrityWarning;
-      if (!verified) {
-        console.warn(
-          `dataset integrity mismatch: expected ${integrityWarning?.expectedHash}, got ${integrityWarning?.actualHash}`,
-        );
-      }
-    } catch (e) {
-      loadError = e instanceof Error ? e.message : 'failed to load the broker dataset';
-    }
+    const result = await loadDataset();
+    brokers = result.brokers;
+    meta = result.meta;
+    verified = result.verified;
+    integrityWarning = result.integrityWarning;
+    loadError = result.loadError;
   });
 
   $: filtered = search.trim()
@@ -70,6 +62,13 @@
     which covers many of these brokers in one request.
   </div>
 {/if}
+
+<div class="guide-callout">
+  <p>
+    142 brokers is a lot to look at once. <a href="/brokers/guide/">Work through them a few at
+    a time</a> instead — sensible order, one sitting at a time.
+  </p>
+</div>
 
 <input class="search" type="search" placeholder="Search brokers…" bind:value={search} />
 
@@ -120,6 +119,21 @@
     border-radius: 4px;
     margin-bottom: 1rem;
     font-size: 0.9rem;
+  }
+  .guide-callout {
+    background: color-mix(in srgb, var(--seal) 8%, transparent);
+    border: 1px solid var(--seal);
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+  .guide-callout p {
+    margin: 0;
+  }
+  .guide-callout a {
+    color: var(--seal);
+    font-weight: 600;
   }
   .search {
     width: 100%;

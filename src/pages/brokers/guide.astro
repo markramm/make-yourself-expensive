@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GuidedBatch from '../../components/GuidedBatch.svelte';
+---
+
+<BaseLayout title="Guided Opt-Out">
+  <h1>Guided opt-out</h1>
+  <p class="intro">
+    Work through a few brokers at a time, in order of what matters most. Check one off, the
+    list gets shorter. <a href="/brokers">Prefer the full list?</a>
+  </p>
+  <GuidedBatch client:load />
+</BaseLayout>
+
+<style>
+  .intro {
+    color: var(--graphite, #6b6459);
+    font-size: 0.95rem;
+  }
+</style>
