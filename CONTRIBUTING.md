@@ -9,6 +9,14 @@ npm test           # vitest -- run this before every PR
 npx astro check    # typecheck
 ```
 
+**Before pushing**, run `npm ci` (not just `npm install`) at least once and confirm it
+succeeds. `npm install` will happily update `node_modules` from a lockfile that's drifted
+out of sync with `package.json` -- `npm ci` is what CI actually runs, and it fails hard on
+that drift instead of quietly tolerating it. This has broken the deploy workflow more than
+once (usually after installing a new dependency or running a tool like `playwright install`
+that touches platform-specific optional deps) -- `npm ci` locally catches it before a push
+does.
+
 ## The constraints that shape everything here
 
 This app's whole reason to exist is "no server touches your data, and you don't have to
