@@ -7,4 +7,11 @@ import ProfileForm from '../components/ProfileForm.svelte';
   <h1>Your profile</h1>
   <ProfileForm client:load />
   <p><a href="/brokers">Continue to broker list →</a></p>
+  <p class="switch-link"><a href="/switch-devices">Using another device or browser too?</a></p>
 </BaseLayout>
+
+<style>
+  .switch-link {
+    font-size: 0.9rem;
+  }
+</style>

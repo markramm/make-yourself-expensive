@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import DeviceTransfer from '../components/DeviceTransfer.svelte';
+---
+
+<BaseLayout title="Switch Devices">
+  <h1>Switch devices</h1>
+  <p class="intro">
+    Nothing here lives on a server — your profile and progress are stored only in this
+    browser. Moving to a new device or browser means carrying that file yourself: save it
+    here, then load it wherever you continue.
+  </p>
+  <DeviceTransfer client:load />
+</BaseLayout>
+
+<style>
+  .intro {
+    color: var(--graphite, #6b6459);
+    font-size: 0.95rem;
+    max-width: 32rem;
+  }
+</style>

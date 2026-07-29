@@ -13,6 +13,14 @@ const IV_BYTES = 12; // 96-bit IV, the recommended size for AES-GCM
 export interface ExportPayload {
   profile: Record<string, unknown>;
   progress: Record<string, unknown>;
+  /**
+   * Per-store schema versions at the time of export (see stores/profile.ts and
+   * stores/progress.ts for their PROFILE_SCHEMA_VERSION / PROGRESS_SCHEMA_VERSION constants).
+   * Optional and absent on exports written before this field existed -- treat a missing
+   * entry as schema_version 0 for that store, same convention loadVersioned() uses for
+   * pre-versioning localStorage data.
+   */
+  schema_versions?: { profile?: number; progress?: number };
 }
 
 interface EncryptedEnvelope {
