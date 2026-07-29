@@ -3,7 +3,11 @@
 
   export let broker: Broker;
 
-  let expanded = false;
+  // Guided-tier brokers are the highest-friction ones (CAPTCHA, ID, phone) -- the steps are
+  // expanded by default so a reader sees them BEFORE clicking away to the opt-out page, not
+  // hidden below a toggle they'd only notice after already leaving. Still collapsible, since
+  // a 108-entry section needs a way to compact back down once a row's been read.
+  let expanded = true;
 
   // instructions_md is authored plain markdown (numbered lists, plain links) -- a minimal
   // line-based renderer is enough here without pulling in a full markdown parser dependency.
@@ -32,15 +36,11 @@
     {#if broker.charges_fee}<span class="flag">charges a fee</span>{/if}
   </div>
 
-  {#if broker.opt_out_url}
-    <a href={broker.opt_out_url} target="_blank" rel="noopener noreferrer" class="open-link">
-      Open opt-out page ↗
-    </a>
-  {:else if broker.phone}
+  {#if !broker.opt_out_url && broker.phone}
     <span class="phone">Call {broker.phone}</span>
   {/if}
 
-  <button class="toggle" on:click={() => (expanded = !expanded)}>
+  <button class="toggle" on:click={() => (expanded = !expanded)} aria-expanded={expanded}>
     {expanded ? 'Hide steps' : 'Show steps'}
   </button>
 
@@ -71,6 +71,9 @@
     padding: 0.1rem 0.35rem;
     border-radius: 2px;
   }
+  .phone {
+    font-size: 0.9rem;
+  }
   .toggle {
     font-size: 0.85rem;
     background: transparent;
@@ -83,5 +86,8 @@
     font-size: 0.9rem;
     line-height: 1.5;
     max-width: 34rem;
+    background: color-mix(in srgb, var(--rule, #c9c1b2) 25%, transparent);
+    border-radius: 4px;
+    padding: 0.6rem 0.75rem;
   }
 </style>

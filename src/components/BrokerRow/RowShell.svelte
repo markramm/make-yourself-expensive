@@ -5,18 +5,33 @@
   export let broker: Broker;
   export let done: boolean;
   export let onToggle: () => void;
+  // The broker's own opt-out page, when one exists. The title IS the primary action --
+  // clicking the name opens the opt-out page directly, rather than making the reader hunt
+  // for a separately-styled "Open opt-out page" link elsewhere in the row. Phone-only
+  // brokers and auto-tier (email) brokers have no URL, so the title stays plain text and
+  // the tier-specific action (a phone number, a compose-email button) is the only action.
+  export let href: string | null = null;
 
   $: badge = badgeDecisionFor(broker);
 </script>
 
 <div class="row" class:done>
-  <button class="strike-btn" on:click={onToggle} aria-pressed={done} aria-label={done ? `Mark ${broker.name} as not done` : `Mark ${broker.name} as done`}>
-    {done ? '✓' : ''}
-  </button>
+  <label class="check-target">
+    <input
+      type="checkbox"
+      checked={done}
+      on:change={onToggle}
+      aria-label={done ? `Mark ${broker.name} as not done` : `Mark ${broker.name} as done`}
+    />
+  </label>
 
   <div class="body">
     <div class="name-line">
-      <span class="name">{broker.name}</span>
+      {#if href}
+        <a {href} target="_blank" rel="noopener noreferrer" class="name">{broker.name} ↗</a>
+      {:else}
+        <span class="name">{broker.name}</span>
+      {/if}
       <span class="priority-badge {badge.priorityBadgeClass}">{broker.priority}</span>
       {#if badge.showUnverifiedBadge}
         <span class="unverified-badge" title="A human hasn't confirmed this entry against the broker's own page yet">
@@ -43,16 +58,23 @@
   .row.done .name {
     text-decoration: line-through;
   }
-  .strike-btn {
+  /* 44px touch target (mobile-accessibility floor) around a visually smaller checkbox --
+     the padding, not the checkbox itself, absorbs the extra tap area. */
+  .check-target {
     flex: none;
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 1px solid var(--rule, #c9c1b2);
-    border-radius: 3px;
-    background: transparent;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: -0.6rem -0.6rem 0 -0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    font-size: 0.9rem;
-    line-height: 1;
+  }
+  .check-target input {
+    width: 1.15rem;
+    height: 1.15rem;
+    accent-color: var(--seal, #8a1c1c);
+    cursor: pointer;
   }
   .body {
     flex: 1;
@@ -66,6 +88,16 @@
   }
   .name {
     font-weight: 600;
+    color: inherit;
+  }
+  a.name {
+    text-decoration: underline;
+    text-decoration-color: var(--rule, #c9c1b2);
+    text-underline-offset: 0.15em;
+  }
+  a.name:hover,
+  a.name:focus-visible {
+    text-decoration-color: var(--seal, #8a1c1c);
   }
   .priority-badge,
   .unverified-badge {

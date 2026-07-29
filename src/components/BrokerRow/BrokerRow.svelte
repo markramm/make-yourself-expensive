@@ -16,6 +16,11 @@
   $: hasSensitiveFields = broker.required_fields.some((f) => SENSITIVE_FIELDS.has(f));
   $: needsGuardrail = hasSensitiveFields && !guardrailConfirmed;
 
+  // Only assisted/guided tiers have opt_out_url as their actual action -- auto-tier (email)
+  // brokers sometimes carry a URL too (usually just a general privacy-policy page, not an
+  // opt-out form), and linking the title there would point the reader at the wrong action.
+  $: titleHref = needsGuardrail || broker.tier === 'auto' ? null : broker.opt_out_url;
+
   let guardrailConfirmed = false;
   let showGuardrail = false;
 
@@ -26,7 +31,7 @@
   }
 </script>
 
-<RowShell {broker} {done} {onToggle}>
+<RowShell {broker} {done} {onToggle} href={titleHref}>
   {#if needsGuardrail}
     <button class="reveal-action" on:click={requestAction}>Continue (sensitive info required)</button>
   {:else if broker.tier === 'auto'}

@@ -53,12 +53,6 @@
 </script>
 
 <div class="assisted-action">
-  {#if broker.opt_out_url}
-    <a href={broker.opt_out_url} target="_blank" rel="noopener noreferrer" class="open-link">
-      Open opt-out form ↗
-    </a>
-  {/if}
-
   {#if pastableFields.length > 0}
     <div class="fields" role="group" aria-label="Fields to paste into the form">
       {#each pastableFields as field}

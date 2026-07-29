@@ -21,11 +21,16 @@ const pageTitle = title ?? frontmatter?.title ?? '';
   </head>
   <body>
     <nav class="site-nav">
-      <a href="/" class="brand">Make Yourself Expensive</a>
-      <a href="/brokers">Opt-Out</a>
-      <a href="/harden/">Harden</a>
-      <a href="/resources">Resources</a>
-      <a href="/profile">Profile</a>
+      <a href="/" class="brand">
+        <span class="brand-full">Make Yourself Expensive</span>
+        <span class="brand-short">MYE</span>
+      </a>
+      <div class="nav-links">
+        <a href="/brokers">Opt-Out</a>
+        <a href="/harden/">Harden</a>
+        <a href="/resources">Resources</a>
+        <a href="/profile">Profile</a>
+      </div>
     </nav>
     <main>
       <slot />
@@ -60,7 +65,10 @@ const pageTitle = title ?? frontmatter?.title ?? '';
   }
   .site-nav {
     display: flex;
-    gap: 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--rule);
     font-family: 'Courier New', monospace;
@@ -71,6 +79,27 @@ const pageTitle = title ?? frontmatter?.title ?? '';
   }
   .site-nav .brand {
     font-weight: bold;
+    white-space: nowrap;
+  }
+  .brand-short {
+    display: none;
+  }
+  .nav-links {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+  @media (max-width: 420px) {
+    .brand-full {
+      display: none;
+    }
+    .brand-short {
+      display: inline;
+    }
+    .nav-links {
+      gap: 1rem;
+      font-size: 0.9rem;
+    }
   }
   main {
     max-width: 42rem;
