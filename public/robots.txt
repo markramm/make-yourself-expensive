@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://become-expensive.transparencycascade.org/sitemap-index.xml

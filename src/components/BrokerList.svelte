@@ -65,8 +65,15 @@
 
 <div class="guide-callout">
   <p>
-    142 brokers is a lot to look at once. <a href="/brokers/guide/">Work through them a few at
-    a time</a> instead — sensible order, one sitting at a time.
+    {meta?.authored_count ?? 'This many'} brokers is a lot to look at once. <a href="/brokers/guide/">Work
+    through them a few at a time</a> instead — sensible order, one sitting at a time.
+  </p>
+</div>
+
+<div class="harden-callout">
+  <p>
+    Opting out cleans up data already collected. <a href="/harden/">Hardening your devices</a>
+    slows down what gets collected next.
   </p>
 </div>
 
@@ -133,6 +140,22 @@
   }
   .guide-callout a {
     color: var(--seal);
+    font-weight: 600;
+  }
+  .harden-callout {
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+  .harden-callout p {
+    margin: 0;
+    color: var(--graphite);
+  }
+  .harden-callout a {
+    color: var(--ink);
     font-weight: 600;
   }
   .search {
