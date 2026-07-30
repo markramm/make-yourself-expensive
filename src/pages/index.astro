@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { PINNED_DATASET } from '../data/dataset-manifest';
+import ProgressSummary from '../components/ProgressSummary.svelte';
 ---
 
 <BaseLayout
@@ -15,6 +16,8 @@ import { PINNED_DATASET } from '../data/dataset-manifest';
     data out of the data-broker economy by hand, without handing it to a paid service to do it
     for you. Guides for hardening your own devices are next.
   </p>
+
+  <ProgressSummary client:load />
 
   <h2>Why this is different</h2>
   <ul>
