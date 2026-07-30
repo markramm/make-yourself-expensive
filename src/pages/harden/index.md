@@ -1,6 +1,7 @@
 ---
 layout: ../../layouts/BaseLayout.astro
 title: Harden Your Devices
+description: Make yourself expensive to surveil. iPhone, Android, Mac, and Windows -- the settings that actually matter, in order.
 ---
 
 # Make Yourself Expensive: A Field Guide to Hardening the Devices You Carry

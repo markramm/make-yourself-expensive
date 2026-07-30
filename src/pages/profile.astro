@@ -3,7 +3,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ProfileForm from '../components/ProfileForm.svelte';
 ---
 
-<BaseLayout title="Profile">
+<BaseLayout
+  title="Profile"
+  description="Your on-device profile -- stored only in this browser, never sent anywhere."
+>
   <h1>Your profile</h1>
   <ProfileForm client:load />
   <p><a href="/brokers">Continue to broker list →</a></p>

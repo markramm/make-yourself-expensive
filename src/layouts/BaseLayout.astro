@@ -1,14 +1,22 @@
 ---
 interface Props {
   title?: string;
-  frontmatter?: { title?: string };
+  description?: string;
+  frontmatter?: { title?: string; description?: string };
 }
-// .astro pages pass `title` directly (<BaseLayout title="...">); Markdown pages using
-// `layout:` in frontmatter get all their frontmatter nested under `Astro.props.frontmatter`
-// instead -- support both call conventions rather than picking one and silently breaking
-// the other.
-const { title, frontmatter } = Astro.props;
+// .astro pages pass title/description directly (<BaseLayout title="..." description="...">);
+// Markdown pages using `layout:` in frontmatter get all their frontmatter nested under
+// Astro.props.frontmatter instead -- support both call conventions rather than picking one
+// and silently breaking the other.
+const { title, description, frontmatter } = Astro.props;
 const pageTitle = title ?? frontmatter?.title ?? '';
+const pageDescription =
+  description ??
+  frontmatter?.description ??
+  'Free, no-account, no-server tools for opting out of data brokers and hardening your devices. Nothing leaves your browser -- verify it yourself.';
+const fullTitle = `${pageTitle} — Make Yourself Expensive`;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
+const ogImageUrl = new URL('/og-image.png', Astro.site).toString();
 ---
 
 <html lang="en">
@@ -17,7 +25,23 @@ const pageTitle = title ?? frontmatter?.title ?? '';
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>{pageTitle} — Make Yourself Expensive</title>
+    <title>{fullTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Make Yourself Expensive" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={ogImageUrl} />
   </head>
   <body>
     <nav class="site-nav">
