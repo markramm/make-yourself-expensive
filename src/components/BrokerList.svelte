@@ -14,7 +14,10 @@
 
   let brokers: Broker[] = [];
   let meta: DatasetMeta | null = null;
-  let verified = true;
+  // null = not yet loaded / fetch failed (see useDataset.ts's DatasetLoadState) -- the
+  // {#if loadError} branch always renders first when null, so the mismatch banner below never
+  // shows for a failed fetch, only for a confirmed hash mismatch.
+  let verified: boolean | null = true;
   let integrityWarning: { expectedHash: string; actualHash: string } | undefined;
   let loadError: string | null = null;
   let search = '';
@@ -89,7 +92,7 @@
         <BrokerRow
           {broker}
           profile={$profileStore}
-          done={isDone($progressStore, broker.id)}
+          progress={$progressStore[broker.id] ?? { done: false, doneAt: null }}
           onToggle={() => progressStore.toggle(broker.id)}
         />
       {/each}

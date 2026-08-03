@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { Broker } from '../../lib/dataset/fetchAndVerify';
-  import { badgeDecisionFor } from './badgeContract';
+  import type { BrokerProgress } from '../../stores/progress';
+  import { badgeDecisionFor, isRecheckDue } from './badgeContract';
 
   export let broker: Broker;
-  export let done: boolean;
+  export let progress: BrokerProgress;
   export let onToggle: () => void;
   // The broker's own opt-out page, when one exists. The title IS the primary action --
   // clicking the name opens the opt-out page directly, rather than making the reader hunt
@@ -12,7 +13,9 @@
   // the tier-specific action (a phone number, a compose-email button) is the only action.
   export let href: string | null = null;
 
+  $: done = progress.done;
   $: badge = badgeDecisionFor(broker);
+  $: recheckDue = isRecheckDue(broker, progress);
 
   // Announced only after a real toggle (not on initial render) -- an aria-live region that's
   // already populated when the page loads doesn't get read by most screen readers; it has to
@@ -49,6 +52,14 @@
       {#if badge.showUnverifiedBadge}
         <span class="unverified-badge" title="A human hasn't confirmed this entry against the broker's own page yet">
           unverified
+        </span>
+      {/if}
+      {#if recheckDue}
+        <span
+          class="recheck-badge"
+          title="People-search sites often re-add listings after some time -- worth checking whether this one came back"
+        >
+          re-check due
         </span>
       {/if}
     </div>
@@ -126,7 +137,8 @@
     text-decoration-color: var(--seal, #8a1c1c);
   }
   .priority-badge,
-  .unverified-badge {
+  .unverified-badge,
+  .recheck-badge {
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
@@ -148,6 +160,10 @@
   .unverified-badge {
     border: 1px dashed var(--graphite, #6b6459);
     color: var(--graphite, #6b6459);
+  }
+  .recheck-badge {
+    border: 1px solid var(--seal, #8a1c1c);
+    color: var(--seal, #8a1c1c);
   }
 
   @media (prefers-reduced-motion: no-preference) {

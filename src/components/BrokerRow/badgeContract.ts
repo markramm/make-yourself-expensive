@@ -20,3 +20,25 @@ export function badgeDecisionFor(broker: Pick<Broker, 'last_verified' | 'priorit
     priorityBadgeClass: `priority-${broker.priority}`,
   };
 }
+
+/**
+ * People-search sites in particular re-scrape and re-add listings within months -- readd_days
+ * captures how long a broker's opt-out reliably sticks. Without this, `done` means "done
+ * forever," which quietly undermines the whole exercise: a listing can silently reappear and
+ * the checked-off row gives no signal it needs another look.
+ *
+ * `done` stays true regardless -- this never un-marks the checkbox, it only flags that the
+ * completed action may be stale. Returns false (never due) when the data can't support the
+ * calculation: not done yet, no completion timestamp, or the broker has no known readd cadence.
+ */
+export function isRecheckDue(
+  broker: Pick<Broker, 'readd_days'>,
+  progress: { done: boolean; doneAt: string | null },
+  now: Date = new Date(),
+): boolean {
+  if (!progress.done || !progress.doneAt || broker.readd_days === null) return false;
+  const doneAt = new Date(progress.doneAt);
+  if (Number.isNaN(doneAt.getTime())) return false;
+  const dueAt = new Date(doneAt.getTime() + broker.readd_days * 24 * 60 * 60 * 1000);
+  return now >= dueAt;
+}

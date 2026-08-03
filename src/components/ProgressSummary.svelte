@@ -6,11 +6,15 @@
   import { HARDEN_CHECKLISTS } from '../lib/harden/checklists';
 
   let brokerTotal = 0;
+  let verifiedCount: number | null = null;
   let loaded = false;
 
   onMount(async () => {
     const result = await loadDataset();
     brokerTotal = result.brokers.length;
+    if (result.meta) {
+      verifiedCount = result.meta.authored_count - result.meta.unverified_count;
+    }
     loaded = true;
   });
 
@@ -22,6 +26,14 @@
 </script>
 
 {#if loaded}
+  {#if verifiedCount !== null}
+    <p class="dataset-honesty">
+      {brokerTotal} brokers tracked, {verifiedCount} verified so far —
+      <a href="https://github.com/markramm/data-broker-registry" target="_blank" rel="noopener noreferrer"
+        >help verify more</a
+      >.
+    </p>
+  {/if}
   <div class="progress-summary">
     <div class="stat">
       <span class="count">{brokerDone}<span class="of">/{brokerTotal}</span></span>
@@ -36,6 +48,15 @@
 {/if}
 
 <style>
+  .dataset-honesty {
+    font-size: 0.9rem;
+    color: var(--graphite);
+    margin: 0 0 1rem;
+  }
+  .dataset-honesty a {
+    color: var(--seal);
+    font-weight: 600;
+  }
   .progress-summary {
     display: flex;
     flex-wrap: wrap;

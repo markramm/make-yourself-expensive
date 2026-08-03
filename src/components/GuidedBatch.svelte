@@ -118,7 +118,7 @@
     <BrokerRow
       {broker}
       profile={$profileStore}
-      done={isDone($progressStore, broker.id)}
+      progress={$progressStore[broker.id] ?? { done: false, doneAt: null }}
       onToggle={() => progressStore.toggle(broker.id)}
     />
   {/each}

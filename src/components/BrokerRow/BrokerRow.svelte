@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Broker } from '../../lib/dataset/fetchAndVerify';
   import type { Profile } from '../../stores/profile';
+  import type { BrokerProgress } from '../../stores/progress';
   import RowShell from './RowShell.svelte';
   import BrokerRowAuto from './BrokerRowAuto.svelte';
   import BrokerRowAssisted from './BrokerRowAssisted.svelte';
@@ -9,7 +10,7 @@
 
   export let broker: Broker;
   export let profile: Profile;
-  export let done: boolean;
+  export let progress: BrokerProgress;
   export let onToggle: () => void;
 
   const SENSITIVE_FIELDS = new Set(['ssn', 'gov_id', 'vin']);
@@ -31,7 +32,7 @@
   }
 </script>
 
-<RowShell {broker} {done} {onToggle} href={titleHref}>
+<RowShell {broker} {progress} {onToggle} href={titleHref}>
   {#if needsGuardrail}
     <button class="reveal-action" on:click={requestAction}>Continue (sensitive info required)</button>
   {:else if broker.tier === 'auto'}
