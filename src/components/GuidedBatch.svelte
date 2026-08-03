@@ -61,8 +61,17 @@
     currentBatchIds.clear();
   }
 
+  let levelUpHeading: HTMLHeadingElement | undefined;
+
   $: if (currentBatch !== null && batchAllDone && !showLevelUp) {
     showLevelUp = true;
+  }
+
+  // Moves focus to the level-up heading once it's actually in the DOM, so a screen-reader or
+  // keyboard user isn't left on a checkbox that just disappeared -- afterUpdate would fire too
+  // early (before the {#if} block renders it), so this reacts off showLevelUp directly.
+  $: if (showLevelUp && levelUpHeading) {
+    levelUpHeading.focus();
   }
 </script>
 
@@ -80,8 +89,8 @@
     </p>
   </div>
 {:else if showLevelUp}
-  <div class="level-up">
-    <h2>Level {levelsThisSession + 1} cleared.</h2>
+  <div class="level-up" aria-live="polite">
+    <h2 bind:this={levelUpHeading} tabindex="-1">Level {levelsThisSession + 1} cleared.</h2>
     <p>
       {currentBatch.remainingAfterBatch > 0
         ? `${currentBatch.remainingAfterBatch} more to go after this next one.`
@@ -133,6 +142,9 @@
     text-transform: uppercase;
     letter-spacing: 0.03em;
     font-size: 1.1rem;
+  }
+  .level-up h2:focus-visible {
+    outline: none;
   }
   .all-clear p,
   .level-up p {

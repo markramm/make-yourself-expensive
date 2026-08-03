@@ -19,10 +19,10 @@
   {#if showDeviceHeading}
     <h2>{title}</h2>
   {/if}
-  <p class="tally">{doneCount}/{items.length} done</p>
+  <p class="tally" aria-live="polite">{doneCount}/{items.length} done</p>
 
   {#if baseline.length > 0}
-    <ul class="items">
+    <ul class="items" role="group" aria-label="{title} checklist">
       {#each baseline as item (item.id)}
         <li>
           <label>
@@ -42,8 +42,10 @@
   {/if}
 
   {#if higherRisk.length > 0}
-    <p class="higher-risk-heading">If you're higher-risk (organizers, immigrants, journalists)</p>
-    <ul class="items">
+    <p class="higher-risk-heading" id="{device}-higher-risk-heading">
+      If you're higher-risk (organizers, immigrants, journalists)
+    </p>
+    <ul class="items" role="group" aria-labelledby="{device}-higher-risk-heading">
       {#each higherRisk as item (item.id)}
         <li>
           <label>

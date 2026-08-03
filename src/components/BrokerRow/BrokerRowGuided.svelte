@@ -3,6 +3,8 @@
 
   export let broker: Broker;
 
+  const instructionsId = `guided-instructions-${broker.id}`;
+
   // Guided-tier brokers are the highest-friction ones (CAPTCHA, ID, phone) -- the steps are
   // expanded by default so a reader sees them BEFORE clicking away to the opt-out page, not
   // hidden below a toggle they'd only notice after already leaving. Still collapsible, since
@@ -40,13 +42,18 @@
     <span class="phone">Call {broker.phone}</span>
   {/if}
 
-  <button class="toggle" on:click={() => (expanded = !expanded)} aria-expanded={expanded}>
+  <button
+    class="toggle"
+    on:click={() => (expanded = !expanded)}
+    aria-expanded={expanded}
+    aria-controls={instructionsId}
+  >
     {expanded ? 'Hide steps' : 'Show steps'}
   </button>
 
   {#if expanded}
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <div class="instructions">{@html renderInstructions(broker.instructions_md)}</div>
+    <div id={instructionsId} class="instructions">{@html renderInstructions(broker.instructions_md)}</div>
   {/if}
 </div>
 

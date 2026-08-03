@@ -201,8 +201,10 @@
 
   <button class="save-btn" on:click={handleSave}>Save to a file</button>
 
-  {#if saveError}<p class="error">{saveError}</p>{/if}
-  {#if saveConfirmation}<p class="confirmation">{saveConfirmation}</p>{/if}
+  <div aria-live="polite">
+    {#if saveError}<p class="error" role="alert">{saveError}</p>{/if}
+    {#if saveConfirmation}<p class="confirmation">{saveConfirmation}</p>{/if}
+  </div>
 </section>
 
 <section class="transfer-block">
@@ -216,9 +218,11 @@
     on:change={handleFileSelected}
   />
 
-  {#if loadError}
-    <p class="error">{loadError}</p>
-  {/if}
+  <div aria-live="polite">
+    {#if loadError}
+      <p class="error" role="alert">{loadError}</p>
+    {/if}
+  </div>
 
   {#if pendingEnvelope && pendingEnvelope.encrypted && !pendingPayload}
     <label class="passphrase-field load-passphrase-field">

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { Broker } from '../lib/dataset/fetchAndVerify';
 
   export let broker: Broker;
@@ -13,11 +14,20 @@
     gov_id: "government ID (e.g. driver's license photo)",
     vin: 'vehicle identification number',
   };
+
+  let titleEl: HTMLHeadingElement;
+  onMount(() => titleEl?.focus());
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') onCancel();
+  }
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 <div class="backdrop" role="presentation" on:click={onCancel}>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="guardrail-title" on:click|stopPropagation>
-    <h2 id="guardrail-title">Before you continue with {broker.name}</h2>
+    <h2 id="guardrail-title" bind:this={titleEl} tabindex="-1">Before you continue with {broker.name}</h2>
     <p>
       This broker's process asks for sensitive information most opt-outs don't require:
     </p>
@@ -75,5 +85,8 @@
     padding: 0.5rem 1rem;
     border-radius: 3px;
     cursor: pointer;
+  }
+  #guardrail-title:focus-visible {
+    outline: none;
   }
 </style>

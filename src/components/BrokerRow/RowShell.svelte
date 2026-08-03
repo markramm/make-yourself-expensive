@@ -13,6 +13,19 @@
   export let href: string | null = null;
 
   $: badge = badgeDecisionFor(broker);
+
+  // Announced only after a real toggle (not on initial render) -- an aria-live region that's
+  // already populated when the page loads doesn't get read by most screen readers; it has to
+  // change *after* the region exists to fire. `done` is captured BEFORE calling onToggle():
+  // onToggle() synchronously updates progressStore, which re-renders this component with the
+  // new `done` prop value before this function finishes, so reading `done` after the call
+  // reports the post-toggle state, not the transition that just happened.
+  let announcement = '';
+  function handleToggle() {
+    const wasDone = done;
+    onToggle();
+    announcement = wasDone ? `${broker.name} marked not done` : `${broker.name} marked done`;
+  }
 </script>
 
 <div class="row" class:done>
@@ -20,7 +33,7 @@
     <input
       type="checkbox"
       checked={done}
-      on:change={onToggle}
+      on:change={handleToggle}
       aria-label={done ? `Mark ${broker.name} as not done` : `Mark ${broker.name} as done`}
     />
   </label>
@@ -44,7 +57,20 @@
   </div>
 </div>
 
+<span class="sr-only" aria-live="polite">{announcement}</span>
+
 <style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .row {
     display: flex;
     gap: 0.75rem;

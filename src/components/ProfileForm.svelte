@@ -2,13 +2,13 @@
   import { profileStore } from '../stores/profile';
 </script>
 
-<p class="privacy-note">
+<p class="privacy-note" id="profile-privacy-note">
   Everything below stays in this browser's local storage. It is never sent to a server —
   there isn't one. Clearing your browser data will erase it too (see the export page to make
   a backup).
 </p>
 
-<form on:submit|preventDefault>
+<form on:submit|preventDefault aria-describedby="profile-privacy-note">
   <label>
     Full name
     <input type="text" bind:value={$profileStore.fullName} autocomplete="name" />
