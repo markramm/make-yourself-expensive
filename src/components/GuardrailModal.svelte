@@ -16,17 +16,52 @@
   };
 
   let titleEl: HTMLHeadingElement;
+  let modalEl: HTMLDivElement;
   onMount(() => titleEl?.focus());
 
+  function focusableElements(): HTMLElement[] {
+    if (!modalEl) return [];
+    return Array.from(
+      modalEl.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    );
+  }
+
+  // Basic focus trap: Tab/Shift+Tab wrap within the modal instead of walking out into the
+  // page behind it -- this is a real modal blocking a decision about sensitive data, not a
+  // dismissable tooltip, so keyboard focus should never silently escape it.
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') onCancel();
+    if (e.key === 'Escape') {
+      onCancel();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const focusable = focusableElements();
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
 
 <div class="backdrop" role="presentation" on:click={onCancel}>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="guardrail-title" on:click|stopPropagation>
+  <div
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="guardrail-title"
+    bind:this={modalEl}
+    on:click|stopPropagation
+  >
     <h2 id="guardrail-title" bind:this={titleEl} tabindex="-1">Before you continue with {broker.name}</h2>
     <p>
       This broker's process asks for sensitive information most opt-outs don't require:
