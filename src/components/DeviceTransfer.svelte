@@ -37,7 +37,7 @@
     }
 
     const payload: ExportPayload = {
-      profile: profileStore_snapshot(),
+      profile: $profileStore,
       progress: $progressStore,
       harden: $hardenProgressStore,
       schema_versions: {
@@ -51,6 +51,20 @@
       ? await exportEncrypted(payload, savePassphrase)
       : exportPlaintext(payload);
 
+    // Test-decrypt the envelope we just built, with the same passphrase, before handing the
+    // file to the user. A typo'd passphrase would otherwise produce an unrecoverable backup --
+    // discovered only when it's needed, the worst possible moment. This can't catch "typed the
+    // passphrase they'll misremember later," but it does catch "the passphrase variable and the
+    // one actually used to encrypt somehow diverged" and gives real confidence the file works.
+    if (encryptOnSave) {
+      try {
+        await importEnvelope(envelope, savePassphrase);
+      } catch {
+        saveError = "Something went wrong preparing this file -- it didn't verify after encrypting. Try again.";
+        return;
+      }
+    }
+
     const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -60,15 +74,9 @@
     URL.revokeObjectURL(url);
 
     saveConfirmation = encryptOnSave
-      ? 'Saved. This file is locked with your passphrase -- keep the passphrase somewhere you’ll remember it, separately from the file itself.'
+      ? 'Saved and confirmed this file unlocks with your passphrase -- keep the passphrase somewhere you’ll remember it, separately from the file itself.'
       : 'Saved as a plain, unencrypted file.';
     savePassphrase = '';
-  }
-
-  function profileStore_snapshot(): Profile {
-    let snapshot: Profile;
-    profileStore.subscribe((v) => (snapshot = v))();
-    return snapshot!;
   }
 
   // ---- Continue here (file -> this device) ----

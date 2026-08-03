@@ -62,6 +62,16 @@ export interface DatasetResult {
 // hash the frontend checks against -- mirrors scripts/build_brokers.py's HASH_EXCLUDED_FIELDS.
 const HASH_EXCLUDED_FIELDS = new Set(['last_verified']);
 
+// Codepoint order, NOT localeCompare -- localeCompare's collation depends on the user's
+// machine/browser locale (punctuation, case, and accented characters can sort differently
+// across locales), while Python's sorted() on strings is always codepoint order. Must match
+// build_brokers.py's `entries.sort(key=lambda e: e.get("id", ""))` byte-for-byte, or
+// verification could fail only for users in certain locales -- a nightmare to reproduce.
+// Exported for a direct regression test against localeCompare's locale-dependent behavior.
+export function compareCodepoints(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 function canonicalForHash(brokers: Broker[]): string {
   const cleaned = brokers
     .map((b) => {
@@ -71,7 +81,7 @@ function canonicalForHash(brokers: Broker[]): string {
       }
       return copy;
     })
-    .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    .sort((a, b) => compareCodepoints(String(a.id), String(b.id)));
   return JSON.stringify(sortKeysDeep(cleaned));
 }
 

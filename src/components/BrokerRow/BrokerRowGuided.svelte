@@ -13,6 +13,10 @@
 
   // instructions_md is authored plain markdown (numbered lists, plain links) -- a minimal
   // line-based renderer is enough here without pulling in a full markdown parser dependency.
+  // Escape BEFORE extracting links, and escape quotes too -- a dataset entry containing
+  // [x](https://a.com/" onmouseover="...) would otherwise break out of the href attribute.
+  // The registry repo's review + hash pin make smuggling this through genuinely hard, but
+  // "verifiable safety" is the whole pitch, so this is defense in depth, not the only layer.
   function renderInstructions(md: string): string {
     return md
       .split('\n')
@@ -20,9 +24,10 @@
         const escaped = line
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;');
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
         return escaped.replace(
-          /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+          /\[([^\]]+)\]\((https?:\/\/[^)"]+)\)/g,
           '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
         );
       })

@@ -88,8 +88,10 @@ export function composeRequest(profile: Profile, broker: Broker, today = new Dat
 function encodeMailto(request: ComposedRequest): string {
   // encodeURIComponent alone (not URLSearchParams, which encodes spaces as '+' -- mail
   // clients mis-render '+' as a literal plus sign in the body rather than a space) plus a
-  // CRLF fixup, since mailto: requires %0D%0A per RFC 6068.
-  const encode = (s: string) => encodeURIComponent(s).replace(/%0A/g, '%0D%0A');
+  // CRLF fixup, since mailto: requires %0D%0A per RFC 6068. Normalize any pre-existing \r\n to
+  // \n FIRST -- otherwise %0A in the encoded %0D%0A would get a second %0D inserted in front
+  // of it, corrupting the line ending.
+  const encode = (s: string) => encodeURIComponent(s.replace(/\r\n/g, '\n')).replace(/%0A/g, '%0D%0A');
   return `mailto:${encodeURIComponent(request.toEmail)}?subject=${encode(request.subject)}&body=${encode(request.body)}`;
 }
 

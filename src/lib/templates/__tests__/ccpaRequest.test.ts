@@ -117,4 +117,19 @@ describe('planDelivery: mailto vs .eml branching', () => {
       expect(text).toContain('A'.repeat(3000));
     }
   });
+
+  it('never double-encodes a line ending that already arrives as \\r\\n', () => {
+    // composeRequest always builds bodies with bare \n, but planDelivery accepts any
+    // ComposedRequest -- a body that already contains \r\n (e.g. from a future template, or a
+    // pasted value) must not come out as %0D%0D%0A. Regression test for a real bug: the old
+    // encoder replaced %0A with %0D%0A unconditionally, so an already-correct %0D%0A picked up
+    // an extra %0D.
+    const req = { subject: 'Test', body: 'line1\r\nline2', toEmail: 'privacy@test-broker.example' };
+    const plan = planDelivery(req);
+    expect(plan.kind).toBe('mailto');
+    if (plan.kind === 'mailto') {
+      expect(plan.href).not.toContain('%0D%0D%0A');
+      expect(plan.href).toContain('line1%0D%0Aline2');
+    }
+  });
 });

@@ -9,7 +9,14 @@ import { PINNED_DATASET } from '../../data/dataset-manifest';
 export interface DatasetLoadState {
   brokers: Broker[];
   meta: DatasetMeta | null;
-  verified: boolean;
+  /**
+   * true = hash matched the pin, false = mismatch, null = couldn't be determined (the fetch
+   * itself failed, so there were no bytes to hash). Callers that only check `!verified` would
+   * treat a failed fetch the same as a confirmed mismatch, which is the right conservative
+   * default -- but the null case should always be paired with checking loadError first, since
+   * "verified" is meaningless when nothing was loaded.
+   */
+  verified: boolean | null;
   integrityWarning?: { expectedHash: string; actualHash: string };
   loadError: string | null;
 }
@@ -33,7 +40,7 @@ export async function loadDataset(): Promise<DatasetLoadState> {
     return {
       brokers: [],
       meta: null,
-      verified: true,
+      verified: null,
       loadError: e instanceof Error ? e.message : 'failed to load the broker dataset',
     };
   }

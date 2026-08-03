@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { fetchAndVerifyDataset } from '../fetchAndVerify';
+import { fetchAndVerifyDataset, compareCodepoints } from '../fetchAndVerify';
 import { PINNED_DATASET } from '../../../data/dataset-manifest';
 
 const datasetPath = path.join(
@@ -74,5 +74,37 @@ describe('fetchAndVerifyDataset', () => {
       vi.fn(async () => new Response('not found', { status: 404, statusText: 'Not Found' })),
     );
     await expect(fetchAndVerifyDataset('/data/brokers.json')).rejects.toThrow(/404/);
+  });
+
+  it('compareCodepoints sorts by raw codepoint, diverging from localeCompare on punctuation/case', () => {
+    // Direct pin of the comparator's behavior. localeCompare, under the ICU default/many
+    // locales, sorts punctuation-insensitively or case-insensitively in ways that diverge from
+    // plain codepoint order -- e.g. it can treat 'a-b' and 'ab' as equal, or order 'B' before
+    // 'a'. compareCodepoints must never do that: it's pure UTF-16 code unit comparison, which
+    // is what Python's sorted() does too.
+    const ids = ['broker-b', 'brokerA', 'broker-a', 'Broker'];
+    const sorted = [...ids].sort(compareCodepoints);
+    // Plain codepoint order: uppercase letters (0x41-0x5A) sort before lowercase (0x61-0x7A),
+    // and '-' (0x2D) sorts before any letter -- this exact order would NOT be guaranteed by
+    // localeCompare, whose result depends on the running environment's locale.
+    expect(sorted).toEqual(['Broker', 'broker-a', 'broker-b', 'brokerA']);
+  });
+
+  it('sorts ids by codepoint, not locale, so the hash matches regardless of input order or user locale', async () => {
+    // Regression test: the sort used to be String(a.id).localeCompare(String(b.id)), which is
+    // locale-dependent (e.g. some locales collate '-' or accented characters differently than
+    // plain codepoint order). Python's sorted() is always codepoint order, so the two
+    // implementations could silently diverge for certain id sets. Two "datasets" that contain
+    // the same broker objects in different input order must hash identically, since the sort
+    // should fully normalize order before hashing -- this is the property that would break
+    // first if a locale-aware comparator were reintroduced on a machine with a non-C locale.
+    const base = JSON.parse(rawDataset);
+    const reordered = { ...base, brokers: [...base.brokers].reverse() };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify(reordered), { status: 200 })),
+    );
+    const result = await fetchAndVerifyDataset('/data/brokers.json');
+    expect(result.verified).toBe(true);
   });
 });
