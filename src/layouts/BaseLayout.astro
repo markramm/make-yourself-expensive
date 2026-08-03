@@ -17,11 +17,36 @@ const pageDescription =
 const fullTitle = `${pageTitle} — Make Yourself Expensive`;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
 const ogImageUrl = new URL('/og-image.png', Astro.site).toString();
+
+// GitHub Pages can't set response headers, so this is enforced via <meta http-equiv> instead
+// of a real Content-Security-Policy header. That has two real gaps worth naming: (1)
+// frame-ancestors is ignored entirely in a meta CSP (clickjacking protection needs a real
+// header -- would need a proxy like Cloudflare in front of Pages), and (2) meta CSP can't set
+// report-uri/report-to. What it DOES enforce: connect-src 'self' makes "nothing leaves your
+// browser" a browser-enforced guarantee, not just a claim to take on faith -- open devtools and
+// try to fetch() an external origin from this page and watch it get blocked. script-src/
+// style-src need 'unsafe-inline' because Astro inlines its island-hydration bootstrap script
+// and Svelte components set dynamic inline styles (e.g. the guided-batch progress bar) -- a
+// static host with no per-request nonce can't do better than that without a hash-per-build
+// scheme, which isn't worth the fragility here.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self'",
+  "connect-src 'self'",
+  "font-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content={CSP} />
+    <meta name="referrer" content="no-referrer" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
