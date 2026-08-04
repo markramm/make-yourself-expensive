@@ -3,7 +3,8 @@
 A free, no-account, no-server toolkit for making yourself a harder, more expensive target
 for surveillance and data-harvesting. Static site (Astro + Svelte islands) — nothing you
 enter here is ever transmitted anywhere. Your profile and progress live only in this
-browser's local storage.
+browser's local storage. (The one exception: aggregate, cookie-free page-view analytics —
+see [`ANALYTICS.md`](./ANALYTICS.md) for exactly what that does and doesn't collect.)
 
 This is the umbrella site: **Opt-Out** (data broker removal — the first section, and the
 one this repo currently implements) sits alongside planned sections on hardening your own
@@ -17,7 +18,11 @@ site.
 
 ## Non-negotiables
 
-1. **No server touches PII.** Fully static; all logic is client-side.
+1. **No server touches PII.** Fully static; all logic is client-side. The one thing that
+   does leave the browser is an aggregate, anonymous page-view ping (see
+   [`ANALYTICS.md`](./ANALYTICS.md)) — it never carries anything from `profileStore` or
+   `progressStore`, and no event is ever tied to which broker or hardening item a visitor
+   interacted with.
 2. **Verifiable.** Open source, and the broker dataset's content hash is pinned into this
    build and checked against the fetched data on every load — see
    `src/lib/dataset/fetchAndVerify.ts`.
@@ -60,6 +65,12 @@ npm run astro check
 pipeline. Updating it is a deliberate two-step process: copy the new `data/brokers.json`,
 then update `src/data/dataset-manifest.ts`'s `datasetVersion`/`contentHash` to match — never
 one without the other.
+
+## Analytics
+
+See [`ANALYTICS.md`](./ANALYTICS.md) — aggregate, cookie-free page-view analytics via
+Plausible. Page views only; no event is ever wired to broker-row or hardening-checklist
+interactions.
 
 ## Deploying
 

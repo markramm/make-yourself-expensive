@@ -22,9 +22,15 @@ does.
 This app's whole reason to exist is "no server touches your data, and you don't have to
 take our word for it." Concretely, that means:
 
-- **Nothing in `src/` makes a network request except fetching the static dataset JSON.**
-  No analytics beacon, no third-party script, no telemetry -- if you're tempted to add one,
-  don't; bring it up first.
+- **Nothing in `src/` makes a network request except fetching the static dataset JSON and
+  the one allowlisted analytics exception.** `BaseLayout.astro` loads Plausible
+  (`plausible.io`) for aggregate, cookie-free page-view counts -- see `ANALYTICS.md` for
+  exactly what it does and doesn't collect. That is the *only* third-party network call this
+  app makes, and the CSP in `BaseLayout.astro` enforces it structurally (only `'self'` and
+  `plausible.io` are allowlisted in `connect-src`/`script-src`). **Never fire a custom
+  Plausible event from broker-row or hardening-checklist interactions** -- page views only.
+  If you're tempted to add a *new* third-party script or telemetry beyond this one
+  allowlisted exception, don't; bring it up first.
 - **Profile data (name, email, address, phone, ...) may never end up in a URL, `href`,
   or browser history.** See `src/components/BrokerRow/BrokerRowAssisted.svelte` for the
   pattern: the opt-out link is rendered exactly as authored, untouched; profile values only
