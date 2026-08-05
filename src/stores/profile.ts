@@ -6,13 +6,14 @@
  */
 import { writable } from 'svelte/store';
 import { loadVersioned, saveVersioned, runMigrations, type Migration } from './versionedStorage';
+import { coerceStateToCode } from '../lib/usStates';
 
 const STORAGE_KEY = 'protect.v1.profile';
 
 // Bump when Profile's shape changes, and add a migration below FROM the old version. This
 // is also the version stamped into export files (see lib/crypto/exportImport.ts), so an
 // import from an older export can be upgraded the same way an old localStorage read is.
-export const PROFILE_SCHEMA_VERSION = 1;
+export const PROFILE_SCHEMA_VERSION = 2;
 
 export interface Profile {
   fullName: string;
@@ -20,9 +21,9 @@ export interface Profile {
   phone: string;
   address: string;
   city: string;
+  /** Two-letter USPS code (e.g. "CA"), or '' if unset/unrecognized -- see lib/usStates.ts. */
   state: string;
   zip: string;
-  isCaliforniaResident: boolean;
 }
 
 const EMPTY_PROFILE: Profile = {
@@ -33,13 +34,27 @@ const EMPTY_PROFILE: Profile = {
   city: '',
   state: '',
   zip: '',
-  isCaliforniaResident: false,
 };
 
 // schema_version 0 -> 1: no shape change yet, just adopting the versioned-storage wrapper.
 // Pre-versioning localStorage data (a bare Profile object, no wrapper) reads as version 0.
+//
+// schema_version 1 -> 2: dropped isCaliforniaResident (it only ever gated a UI banner, and
+// duplicated `state`, which is what actually needs to be authoritative now that it also
+// drives legal-template selection in lib/templates/ccpaRequest.ts -- see that file). `state`
+// changes from free text ("California", "ca", "CA", ...) to a two-letter code; coerceStateToCode
+// best-effort-maps old free text, falling back to '' (unset) on anything ambiguous rather than
+// guessing wrong and silently mis-selecting a legal template.
 const PROFILE_MIGRATIONS: Migration<Profile>[] = [
   { from: 0, migrate: (data) => ({ ...EMPTY_PROFILE, ...(data as Partial<Profile>) }) },
+  {
+    from: 1,
+    migrate: (data) => {
+      const { isCaliforniaResident, ...rest } = data as Partial<Profile> & { isCaliforniaResident?: boolean };
+      const merged = { ...EMPTY_PROFILE, ...rest };
+      return { ...merged, state: coerceStateToCode(merged.state) };
+    },
+  },
 ];
 
 function loadFromStorage(): Profile {

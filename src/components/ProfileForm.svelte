@@ -1,6 +1,15 @@
 <script lang="ts">
   import { profileStore } from '../stores/profile';
+  import { US_STATES } from '../lib/usStates';
 </script>
+
+<p class="why-note">
+  This is optional, and only used for two things: pre-filling the opt-out emails and forms
+  you send yourself, and picking the right legal citation for your state (several states now
+  have consumer-privacy laws — this determines which one your requests reference). You can
+  skip straight to <a href="/brokers">the broker list</a> and fill this in later, but any
+  broker row that composes an email or has fields to copy will be blank until you do.
+</p>
 
 <p class="privacy-note" id="profile-privacy-note">
   Everything below stays in this browser's local storage. It is never sent to a server —
@@ -31,15 +40,16 @@
   </label>
   <label>
     State
-    <input type="text" bind:value={$profileStore.state} autocomplete="address-level1" />
+    <select bind:value={$profileStore.state} autocomplete="address-level1">
+      <option value="">Select a state…</option>
+      {#each US_STATES as s (s.code)}
+        <option value={s.code}>{s.name}</option>
+      {/each}
+    </select>
   </label>
   <label>
     ZIP
     <input type="text" bind:value={$profileStore.zip} autocomplete="postal-code" />
-  </label>
-  <label class="checkbox">
-    <input type="checkbox" bind:checked={$profileStore.isCaliforniaResident} />
-    I'm a California resident
   </label>
 </form>
 
@@ -56,20 +66,28 @@
     gap: 0.25rem;
     font-size: 0.9rem;
   }
-  label.checkbox {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-  }
   input[type='text'],
   input[type='email'],
-  input[type='tel'] {
+  input[type='tel'],
+  select {
     padding: 0.4rem 0.5rem;
     border: 1px solid var(--rule);
     border-radius: 3px;
     background: transparent;
     color: inherit;
     font: inherit;
+  }
+  select option {
+    color: initial;
+  }
+  .why-note {
+    font-size: 0.9rem;
+    max-width: 32rem;
+    margin: 0 0 1rem;
+  }
+  .why-note a {
+    color: var(--seal);
+    font-weight: 600;
   }
   .privacy-note {
     font-size: 0.85rem;

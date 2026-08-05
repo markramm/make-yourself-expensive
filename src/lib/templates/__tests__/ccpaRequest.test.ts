@@ -9,9 +9,8 @@ const shortProfile: Profile = {
   phone: '',
   address: '',
   city: '',
-  state: '',
+  state: 'CA',
   zip: '',
-  isCaliforniaResident: true,
 };
 
 const longProfile: Profile = {
@@ -20,9 +19,8 @@ const longProfile: Profile = {
   phone: '+1 (555) 123-4567 ext. 8910',
   address: '12345 Extremely Long Boulevard Apartment Number 6789-B',
   city: 'San Francisco',
-  state: 'California',
+  state: 'CA',
   zip: '94103-1234',
-  isCaliforniaResident: true,
 };
 
 function makeBroker(overrides: Partial<Broker> = {}): Broker {
@@ -69,6 +67,56 @@ describe('composeRequest', () => {
     expect(() =>
       composeRequest(shortProfile, makeBroker({ opt_out_email: '<verify: find their DPO address>' })),
     ).toThrow();
+  });
+});
+
+describe('composeRequest: legal-basis selection is keyed on the REQUESTER\'s state, not the broker', () => {
+  // Regression coverage for a real bug: the template used to select by broker.legal_basis and
+  // fall back to a CCPA-citing letter for every non-matching broker, regardless of the user's
+  // actual state -- so a Texas resident's request cited California law. Selection must be
+  // keyed on profile.state.
+
+  it('cites CCPA/CPRA for a California resident', () => {
+    const req = composeRequest({ ...shortProfile, state: 'CA' }, makeBroker(), '2026-07-03');
+    expect(req.body).toContain('California Consumer Privacy Act');
+    expect(req.body).toContain('Cal. Civ. Code');
+  });
+
+  it('cites the correct state law for each verified state, not California\'s', () => {
+    const cases: Array<[string, string]> = [
+      ['CO', 'Colorado Privacy Act'],
+      ['CT', 'Connecticut Data Privacy Act'],
+      ['OR', 'Oregon Consumer Privacy Act'],
+      ['TX', 'Texas Data Privacy and Security Act'],
+      ['UT', 'Utah Consumer Privacy Act'],
+      ['VA', 'Virginia Consumer Data Protection Act'],
+    ];
+    for (const [code, expectedLawName] of cases) {
+      const req = composeRequest({ ...shortProfile, state: code }, makeBroker(), '2026-07-03');
+      expect(req.body).toContain(expectedLawName);
+      expect(req.body).not.toContain('California Consumer Privacy Act');
+    }
+  });
+
+  it('falls back to a generic, non-state-specific request for a state with no verified citation', () => {
+    const req = composeRequest({ ...shortProfile, state: 'FL' }, makeBroker(), '2026-07-03');
+    expect(req.body).not.toContain('California Consumer Privacy Act');
+    expect(req.body).not.toContain('Cal. Civ. Code');
+    expect(req.body).not.toMatch(/Under the .* Act/); // no "Under the X Act" citation line at all
+    expect(req.body).toContain('I am requesting that you:');
+    expect(req.body).toContain('Delete the personal information');
+  });
+
+  it('falls back to the generic request when state is unset, never defaulting to CCPA', () => {
+    const req = composeRequest({ ...shortProfile, state: '' }, makeBroker(), '2026-07-03');
+    expect(req.body).not.toContain('California Consumer Privacy Act');
+    expect(req.body).toContain('I am requesting that you:');
+  });
+
+  it('ignores broker.legal_basis entirely -- selection is state-only', () => {
+    // A broker tagged legal_basis: ['ccpa'] must NOT force a CCPA letter for a non-CA resident.
+    const req = composeRequest({ ...shortProfile, state: 'NY' }, makeBroker({ legal_basis: ['ccpa'] }), '2026-07-03');
+    expect(req.body).not.toContain('California Consumer Privacy Act');
   });
 });
 

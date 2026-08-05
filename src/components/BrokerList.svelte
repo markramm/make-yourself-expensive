@@ -58,7 +58,7 @@
   </div>
 {/if}
 
-{#if $profileStore.isCaliforniaResident}
+{#if $profileStore.state === 'CA'}
   <div class="ca-banner">
     California residents can also use the state's free
     <a href="https://privacy.ca.gov/" target="_blank" rel="noopener noreferrer">DROP tool</a>,

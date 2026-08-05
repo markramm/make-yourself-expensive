@@ -10,7 +10,43 @@ describe('migrateProfile (import-time migration)', () => {
     expect(migrated.email).toBe('jane@example.com');
     // fields absent from the old export get filled with EMPTY_PROFILE defaults
     expect(migrated.phone).toBe('');
-    expect(migrated.isCaliforniaResident).toBe(false);
+    expect(migrated.state).toBe('');
+  });
+
+  it('migrates a version-1 export (free-text state, isCaliforniaResident) up to version 2', () => {
+    // Regression coverage for the schema change that dropped isCaliforniaResident (it only
+    // ever gated a UI banner and duplicated `state`, which now drives legal-template
+    // selection -- see lib/templates/ccpaRequest.ts) and switched `state` from free text to
+    // a two-letter code.
+    const raw = {
+      fullName: 'Jane',
+      email: 'jane@example.com',
+      phone: '',
+      address: '',
+      city: '',
+      state: 'California',
+      zip: '',
+      isCaliforniaResident: true,
+    };
+    const migrated = migrateProfile(raw, 1);
+    expect(migrated.state).toBe('CA');
+    expect(migrated.fullName).toBe('Jane');
+    expect('isCaliforniaResident' in migrated).toBe(false);
+  });
+
+  it('migrates a version-1 export with an unrecognized state to the empty (unset) code, not a guess', () => {
+    const raw = {
+      fullName: 'Jane',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      state: 'Somewhere Else',
+      zip: '',
+      isCaliforniaResident: false,
+    };
+    const migrated = migrateProfile(raw, 1);
+    expect(migrated.state).toBe('');
   });
 
   it('passes through data already at the current schema version unchanged', () => {
@@ -20,9 +56,8 @@ describe('migrateProfile (import-time migration)', () => {
       phone: '',
       address: '',
       city: '',
-      state: '',
+      state: 'NY',
       zip: '',
-      isCaliforniaResident: true,
     };
     const migrated = migrateProfile(raw, PROFILE_SCHEMA_VERSION);
     expect(migrated).toEqual(raw);
