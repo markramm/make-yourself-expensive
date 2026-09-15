@@ -23,6 +23,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Pin npm explicitly. node 22 currently bundles npm 10.9.8, but that moves with
+      # patch releases, and npm 10 and 11 resolve optional platform binaries (the
+      # @emnapi/* and @img/sharp-* families) into different lockfile layouts. An
+      # unpinned npm meant a lockfile generated locally could be rejected here with
+      # "Missing: @emnapi/core@... from lock file" even though it verified fine on the
+      # author's machine. Regenerate the lockfile with this same version.
+      - run: npm i -g npm@10.9.8
       - run: npm ci
       - run: npm test
       - run: npx astro check
@@ -36,6 +43,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Pin npm explicitly. node 22 currently bundles npm 10.9.8, but that moves with
+      # patch releases, and npm 10 and 11 resolve optional platform binaries (the
+      # @emnapi/* and @img/sharp-* families) into different lockfile layouts. An
+      # unpinned npm meant a lockfile generated locally could be rejected here with
+      # "Missing: @emnapi/core@... from lock file" even though it verified fine on the
+      # author's machine. Regenerate the lockfile with this same version.
+      - run: npm i -g npm@10.9.8
       - run: npm ci
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
