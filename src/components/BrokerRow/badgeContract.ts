@@ -24,8 +24,10 @@ export interface BadgeDecision {
  * own harm -- they skip a broker they could have opted out of.
  *
  * `unknown` deliberately gets NO badge. It means the checker hasn't run against this entry,
- * which is not information the reader can act on, and badging it would put a warning on 127
+ * which is not information the reader can act on, and badging it would put a warning on 128
  * of 493 rows for no gain.
+ *
+ * An UNCONFIRMED ROUTE is a different thing and does get a badge -- see `routeWarningFor`.
  */
 const LINK_WARNINGS: Record<string, { label: string; title: string }> = {
   broken: {
@@ -48,10 +50,39 @@ const LINK_WARNINGS: Record<string, { label: string; title: string }> = {
   },
 };
 
+/**
+ * The dataset marks a field it could not confirm with an angle-bracket placeholder --
+ * `<verify: what still needs checking>` -- rather than leaving it blank or guessing a value
+ * (see the registry repo's CONTRIBUTING.md). A placeholder `opt_out_url` means nobody has
+ * established where this broker's opt-out actually lives, which is materially different from
+ * `link_status: unknown` ("we simply haven't run the checker against it").
+ *
+ * That distinction is worth a badge because the two failure modes cost a reader differently:
+ * an unchecked link usually works, while an unconfirmed route may send them somewhere that
+ * cannot process their request at all. 40 of 493 entries carry one, so this stays rare enough
+ * to mean something -- unlike badging all 128 `unknown` rows.
+ */
+const PLACEHOLDER = /^<verify:/;
+
+function routeWarningFor(optOutUrl: string | null | undefined): { label: string; title: string } | null {
+  if (typeof optOutUrl !== 'string' || !PLACEHOLDER.test(optOutUrl)) return null;
+  return {
+    label: 'routing unconfirmed',
+    title:
+      "Nobody has confirmed where this broker's opt-out actually lives, so the steps below may " +
+      'route you somewhere that cannot process your request. Read them before you start — and ' +
+      'if you find the real opt-out page, that correction is worth reporting.',
+  };
+}
+
 export function badgeDecisionFor(
-  broker: Pick<Broker, 'last_verified' | 'priority'> & Partial<Pick<Broker, 'link_status'>>,
+  broker: Pick<Broker, 'last_verified' | 'priority'> &
+    Partial<Pick<Broker, 'link_status' | 'opt_out_url'>>,
 ): BadgeDecision {
-  const warning = broker.link_status ? LINK_WARNINGS[broker.link_status] : undefined;
+  // An unconfirmed route outranks a link-state warning: there is no point telling someone a
+  // URL redirects when we are not sure it is the right URL in the first place.
+  const routeWarning = routeWarningFor(broker.opt_out_url);
+  const warning = routeWarning ?? (broker.link_status ? LINK_WARNINGS[broker.link_status] : undefined);
   return {
     // The one non-negotiable contract: last_verified === null MUST show the unverified badge.
     // A CI check can construct a synthetic broker with last_verified: null and assert this is

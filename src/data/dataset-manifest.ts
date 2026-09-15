@@ -7,8 +7,8 @@
  * scripts/build_brokers.py. Update both fields together when bumping to a new dataset release.
  */
 export const PINNED_DATASET = {
-  datasetVersion: '0.1.15',
-  contentHash: 'sha256:b1030ef99ecb6380a05a876abf7f480e6385766eb8f67a9ebd0310328cadef61',
+  datasetVersion: '0.1.16',
+  contentHash: 'sha256:79953a83ff5ad7e269ff55772f59c230199a8f96ff940b2856d782c5e41ab39c',
   // Same-origin static path the app fetches at runtime -- update if the dataset is hosted
   // elsewhere (CDN, GitHub release asset, etc).
   url: '/data/brokers.json',
