@@ -29,6 +29,8 @@ export interface ReportableBroker {
   domain: string;
   /** True when the entry's opt_out_url arrived as an unconfirmed `<verify:>` placeholder. */
   route_unconfirmed?: boolean;
+  /** ISO date a human last confirmed this entry against the broker's own page, or null. */
+  last_verified?: string | null;
 }
 
 /**
@@ -68,5 +70,63 @@ export function routeReportUrl(broker: ReportableBroker): string {
     `?title=${encodeURIComponent(title)}` +
     `&body=${encodeURIComponent(body)}` +
     `&labels=${encodeURIComponent('broker-data,routing')}`
+  );
+}
+
+/**
+ * The report link every row carries, for the report /testing calls the most valuable one:
+ * someone followed this broker the whole way through and found out what actually happens.
+ *
+ * Distinct from routeReportUrl() above, and deliberately NOT merged with it. That one asks a
+ * narrow question of the 17 rows where we do not know where the opt-out lives ("where is it?").
+ * This one asks the open question of every other row ("you followed it -- what happened?").
+ * Collapsing them into one parameterised function would mean prompting a reader who just
+ * completed a working opt-out for a URL we already have.
+ *
+ * `last_verified` shapes the framing rather than gating the link. An entry nobody has signed
+ * off on is where a first-hand account is worth most, but a verified entry can still have
+ * gone stale -- brokers redesign forms and retire domains constantly -- so a confirmed entry
+ * that has since broken is itself a high-value report.
+ *
+ * PII RULE, as above: dataset fields only. This module imports no store, so it structurally
+ * cannot read profileStore or progressStore, and every prompt asks about the BROKER's
+ * behaviour rather than the reader. Issues are public.
+ */
+export function brokerReportUrl(broker: ReportableBroker): string {
+  const title = `${broker.name} (${broker.domain}): opt-out report`;
+  const verified = Boolean(broker.last_verified);
+  const body = [
+    `**Broker:** ${broker.name} (\`${broker.id}\`)`,
+    `**Dataset version:** ${PINNED_DATASET.datasetVersion}`,
+    verified
+      ? `**Entry last confirmed:** ${broker.last_verified}`
+      : '**Entry status:** not yet confirmed against the broker by a human',
+    '',
+    verified
+      ? 'This entry was confirmed against the broker at some point. If it has since changed, that is worth knowing.'
+      : 'Nobody has confirmed this entry against the broker yet, so a first-hand account is especially useful.',
+    '',
+    '**What did the tool say to expect?**',
+    '(fields to fill, CAPTCHA, listing URL...)',
+    '',
+    '**What actually happened?**',
+    '(different fields? an account requirement? a dead page? a fee?)',
+    '',
+    '**Did the listing come down?**',
+    '(not yet / yes, after ___ days / no, still listed)',
+    '',
+    '**Browser and device**',
+    '(e.g. Firefox 141 on macOS, Safari on iPhone)',
+    '',
+    '---',
+    'Please do not paste your real name, address, or profile contents here. Issues are public.',
+    'Describe the shape of the problem, not your personal data.',
+  ].join('\n');
+
+  return (
+    `${DATA_REPO}/issues/new` +
+    `?title=${encodeURIComponent(title)}` +
+    `&body=${encodeURIComponent(body)}` +
+    `&labels=${encodeURIComponent('broker-data,tester-report')}`
   );
 }

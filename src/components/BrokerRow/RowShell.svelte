@@ -2,6 +2,7 @@
   import type { Broker } from '../../lib/dataset/fetchAndVerify';
   import type { BrokerProgress } from '../../stores/progress';
   import { badgeDecisionFor, isRecheckDue } from './badgeContract';
+  import { brokerReportUrl } from '../../lib/reportLink';
 
   export let broker: Broker;
   export let progress: BrokerProgress;
@@ -70,12 +71,49 @@
     </div>
 
     <slot />
+
+    <!-- Every row carries this, not just the 17 with no known route. /testing calls "follow
+         one broker the whole way" the most valuable report this project gets, and until now
+         the only way to file one was three generic links on /testing that lost the broker
+         context -- which broker, which dataset version -- that makes a report actionable.
+         Lives in the shell rather than in each tier component so there is one definition
+         instead of three that can drift apart.
+
+         Deliberately quiet: small, greyed, below the action. It must never compete with the
+         opt-out itself, which is what the reader came to do. -->
+    <p class="report-line">
+      <a
+        class="report-link"
+        href={brokerReportUrl(broker)}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Something wrong here? Tell us →
+      </a>
+    </p>
   </div>
 </div>
 
 <span class="sr-only" aria-live="polite">{announcement}</span>
 
 <style>
+  .report-line {
+    margin: 0.5rem 0 0;
+  }
+  .report-link {
+    font-size: 0.78rem;
+    color: var(--graphite, #6b6459);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--rule, #c9c1b2);
+  }
+  .report-link:hover,
+  .report-link:focus-visible {
+    color: var(--seal, #8a1c1c);
+    border-bottom-color: var(--seal, #8a1c1c);
+  }
+  /* A done row is dimmed to 0.55 opacity; the report link is already the quietest thing in
+     the row, so let it fade with everything else rather than fighting for attention on work
+     the reader has finished. */
   .sr-only {
     position: absolute;
     width: 1px;

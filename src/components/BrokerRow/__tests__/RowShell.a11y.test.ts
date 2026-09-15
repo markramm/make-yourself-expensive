@@ -146,6 +146,10 @@ describe('RowShell: badge rendering matches badgeContract', () => {
 });
 
 describe('RowShell: the broker name as the primary action', () => {
+  // These query the NAME link by its accessible name rather than by "the link in this row".
+  // Every row now also carries a quiet "Something wrong here?" report link, so a bare
+  // getByRole('link') matches two elements and a queryByRole('link') is never null -- which
+  // would make these tests assert something neither true nor interesting.
   it('renders the name as a link when an opt-out URL is supplied', () => {
     const { getByRole } = render(RowShell, {
       props: {
@@ -155,7 +159,7 @@ describe('RowShell: the broker name as the primary action', () => {
         href: 'https://acme.test/opt-out',
       },
     });
-    const link = getByRole('link');
+    const link = getByRole('link', { name: /Acme Data/ });
     expect(link.getAttribute('href')).toBe('https://acme.test/opt-out');
     // Opening a broker's site must not hand it a referrer or a window handle back.
     expect(link.getAttribute('rel')).toContain('noopener');
@@ -164,7 +168,50 @@ describe('RowShell: the broker name as the primary action', () => {
 
   it('leaves the name as plain text when there is no URL to open', () => {
     const { queryByRole, getByText } = renderRow(makeBroker(), notDone);
-    expect(queryByRole('link')).toBeNull();
+    expect(queryByRole('link', { name: /Acme Data/ })).toBeNull();
     expect(getByText('Acme Data')).toBeTruthy();
+  });
+});
+
+describe('RowShell: every row can be reported on', () => {
+  // /testing calls "follow one broker the whole way" the most valuable report this project
+  // gets. Until now the only way to file one was three generic links on /testing that lost
+  // the broker context -- which broker, which dataset version -- that makes a report
+  // actionable. The link lives in the shell so every tier gets it from one definition.
+  it('offers a report link on a row whose name is plain text', () => {
+    const { getByRole } = renderRow(makeBroker(), notDone);
+    const report = getByRole('link', { name: /Something wrong here/ });
+    expect(report.getAttribute('href')).toContain('data-broker-registry/issues/new');
+  });
+
+  it('offers a report link on a row whose name is already a link', () => {
+    const { getByRole } = render(RowShell, {
+      props: {
+        broker: makeBroker(),
+        progress: notDone,
+        onToggle: () => {},
+        href: 'https://acme.test/opt-out',
+      },
+    });
+    expect(getByRole('link', { name: /Something wrong here/ })).toBeTruthy();
+  });
+
+  it('carries this broker\'s id, so the report says which entry to fix', () => {
+    const { getByRole } = renderRow(makeBroker(), notDone);
+    const href = getByRole('link', { name: /Something wrong here/ }).getAttribute('href') ?? '';
+    expect(decodeURIComponent(href)).toContain('acme-data');
+  });
+
+  it('opens without handing the repo a referrer or a window handle', () => {
+    const { getByRole } = renderRow(makeBroker(), notDone);
+    const rel = getByRole('link', { name: /Something wrong here/ }).getAttribute('rel') ?? '';
+    expect(rel).toContain('noopener');
+    expect(rel).toContain('noreferrer');
+  });
+
+  it('stays available on a row already marked done', () => {
+    // Finishing an opt-out is exactly when someone knows whether the instructions were right.
+    const { getByRole } = renderRow(makeBroker(), done);
+    expect(getByRole('link', { name: /Something wrong here/ })).toBeTruthy();
   });
 });
