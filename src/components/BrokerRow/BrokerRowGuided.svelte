@@ -5,10 +5,17 @@
 
   const instructionsId = `guided-instructions-${broker.id}`;
 
+  // 17 entries (12 of them crucial) have no URL, no email and no phone once an unconfirmed
+  // `<verify:>` placeholder is nulled at the dataset boundary. Before normalization the
+  // placeholder rendered as a live link to our own 404; after it, the row would show a "Show
+  // steps" toggle above nothing at all, which reads as broken rather than as honest. For these
+  // rows the written steps ARE the route, so say that in words and keep them open.
+  $: hasNoRoute = !broker.opt_out_url && !broker.opt_out_email && !broker.phone;
+
   // Guided-tier brokers are the highest-friction ones (CAPTCHA, ID, phone) -- the steps are
   // expanded by default so a reader sees them BEFORE clicking away to the opt-out page, not
   // hidden below a toggle they'd only notice after already leaving. Still collapsible, since
-  // a 108-entry section needs a way to compact back down once a row's been read.
+  // a 270-entry section needs a way to compact back down once a row's been read.
   let expanded = true;
 
   // instructions_md is authored plain markdown (numbered lists, plain links) -- a minimal
@@ -43,8 +50,25 @@
     {#if broker.charges_fee}<span class="flag">charges a fee</span>{/if}
   </div>
 
+  <!-- Safe to test opt_out_url for truthiness: fetchAndVerify.ts normalizes an unconfirmed
+       `<verify:>` placeholder to null before any component sees it. Before that, the
+       placeholder string read as truthy and silently hid the phone number on the 7 phone-only
+       rows that carry one -- exactly the rows where the number IS the opt-out route. -->
   {#if !broker.opt_out_url && broker.phone}
     <span class="phone">Call {broker.phone}</span>
+  {/if}
+
+  {#if hasNoRoute}
+    <p class="no-route">
+      {#if broker.route_unconfirmed}
+        We don't have a confirmed opt-out link for this broker yet — the steps below are what we
+        know, and you'll need to find the form on their own site. If you locate the real opt-out
+        page, that correction is worth reporting.
+      {:else}
+        This broker publishes no opt-out link, email, or phone number — the steps below are the
+        whole route.
+      {/if}
+    </p>
   {/if}
 
   <button
@@ -85,6 +109,15 @@
   }
   .phone {
     font-size: 0.9rem;
+  }
+  .no-route {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    max-width: 34rem;
+    margin: 0;
+    color: var(--graphite, #6b6459);
+    border-left: 2px solid var(--seal, #8a1c1c);
+    padding-left: 0.6rem;
   }
   .toggle {
     font-size: 0.85rem;

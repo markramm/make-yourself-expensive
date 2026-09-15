@@ -2,16 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { badgeDecisionFor, isRecheckDue } from '../badgeContract';
 
 describe('badgeDecisionFor: unconfirmed-routing contract', () => {
-  // The dataset marks a field it could not confirm with `<verify: ...>` rather than guessing
-  // (registry CONTRIBUTING.md). 40 of 493 entries carry one on opt_out_url, and without this
-  // branch they compile to link_status 'unknown' and render no badge at all -- so a reader
-  // sees nothing distinguishing "nobody knows where this opt-out lives" from a normal row.
-  it('badges a broker whose opt_out_url is a <verify:> placeholder', () => {
+  // The registry marks a field it could not confirm with `<verify: ...>` rather than guessing
+  // (registry CONTRIBUTING.md). 40 of 493 entries carry one on opt_out_url. fetchAndVerify.ts
+  // nulls those placeholders before any component sees them -- they were rendering as live
+  // links to our own 404 -- and sets `route_unconfirmed` to carry the fact a bare null loses.
+  // These tests drive that flag, which is what the row actually receives; the prefix-matching
+  // itself is tested at the normalization boundary in lib/dataset/__tests__.
+  it('badges a broker whose route was never confirmed', () => {
     const decision = badgeDecisionFor({
       last_verified: null,
       priority: 'crucial',
       link_status: 'unknown',
-      opt_out_url: '<verify: parked domain, needs a confirmed consumer-rights URL>',
+      route_unconfirmed: true,
     });
     expect(decision.linkWarning).toBe('routing unconfirmed');
     expect(decision.linkWarningTitle).toContain('may route you somewhere that cannot process');
@@ -24,7 +26,7 @@ describe('badgeDecisionFor: unconfirmed-routing contract', () => {
       last_verified: null,
       priority: 'high',
       link_status: 'unknown',
-      opt_out_url: 'https://example.test/opt-out',
+      route_unconfirmed: false,
     });
     expect(decision.linkWarning).toBeNull();
   });
@@ -35,39 +37,30 @@ describe('badgeDecisionFor: unconfirmed-routing contract', () => {
       last_verified: null,
       priority: 'crucial',
       link_status: 'redirect',
-      opt_out_url: '<verify: unconfirmed>',
+      route_unconfirmed: true,
     });
     expect(decision.linkWarning).toBe('routing unconfirmed');
   });
 
-  it('leaves link-state warnings alone when the URL is real', () => {
+  it('leaves link-state warnings alone when the route is confirmed', () => {
     const decision = badgeDecisionFor({
       last_verified: null,
       priority: 'crucial',
       link_status: 'broken',
-      opt_out_url: 'https://example.test/gone',
+      route_unconfirmed: false,
     });
     expect(decision.linkWarning).toBe('link may be dead');
   });
 
-  it('does not badge a null or absent opt_out_url as unconfirmed', () => {
-    // Email-only brokers legitimately have no opt_out_url; that is not an unconfirmed route.
-    expect(
-      badgeDecisionFor({ last_verified: null, priority: 'crucial', opt_out_url: null }).linkWarning,
-    ).toBeNull();
+  it('does not badge a broker that simply has no URL', () => {
+    // Email-only and phone-only brokers legitimately have no opt_out_url. An absent flag is
+    // "no URL", not "unconfirmed route" -- the two must not collapse, or 91 email-tier rows
+    // would wrongly claim nobody knows where their opt-out lives.
     expect(badgeDecisionFor({ last_verified: null, priority: 'crucial' }).linkWarning).toBeNull();
-  });
-
-  it('does not treat a URL merely containing "<verify:" mid-string as a placeholder', () => {
-    // The marker is an anchored prefix, so a query string that happens to embed the text
-    // does not flip a real URL into an unconfirmed one.
-    const decision = badgeDecisionFor({
-      last_verified: null,
-      priority: 'standard',
-      link_status: 'live',
-      opt_out_url: 'https://example.test/x?note=<verify:%20nope>',
-    });
-    expect(decision.linkWarning).toBeNull();
+    expect(
+      badgeDecisionFor({ last_verified: null, priority: 'crucial', route_unconfirmed: undefined })
+        .linkWarning,
+    ).toBeNull();
   });
 });
 

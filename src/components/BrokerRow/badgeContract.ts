@@ -61,11 +61,14 @@ const LINK_WARNINGS: Record<string, { label: string; title: string }> = {
  * an unchecked link usually works, while an unconfirmed route may send them somewhere that
  * cannot process their request at all. 40 of 493 entries carry one, so this stays rare enough
  * to mean something -- unlike badging all 128 `unknown` rows.
+ *
+ * This reads the `route_unconfirmed` flag rather than sniffing `opt_out_url` for the
+ * placeholder text: fetchAndVerify.ts nulls those placeholders before any component sees them
+ * (they were rendering as live links to our own 404), so by the time a row is drawn the raw
+ * marker is gone and only the flag still carries the fact. See normalizeBroker().
  */
-const PLACEHOLDER = /^<verify:/;
-
-function routeWarningFor(optOutUrl: string | null | undefined): { label: string; title: string } | null {
-  if (typeof optOutUrl !== 'string' || !PLACEHOLDER.test(optOutUrl)) return null;
+function routeWarningFor(routeUnconfirmed: boolean | undefined): { label: string; title: string } | null {
+  if (!routeUnconfirmed) return null;
   return {
     label: 'routing unconfirmed',
     title:
@@ -77,11 +80,11 @@ function routeWarningFor(optOutUrl: string | null | undefined): { label: string;
 
 export function badgeDecisionFor(
   broker: Pick<Broker, 'last_verified' | 'priority'> &
-    Partial<Pick<Broker, 'link_status' | 'opt_out_url'>>,
+    Partial<Pick<Broker, 'link_status' | 'route_unconfirmed'>>,
 ): BadgeDecision {
   // An unconfirmed route outranks a link-state warning: there is no point telling someone a
   // URL redirects when we are not sure it is the right URL in the first place.
-  const routeWarning = routeWarningFor(broker.opt_out_url);
+  const routeWarning = routeWarningFor(broker.route_unconfirmed);
   const warning = routeWarning ?? (broker.link_status ? LINK_WARNINGS[broker.link_status] : undefined);
   return {
     // The one non-negotiable contract: last_verified === null MUST show the unverified badge.

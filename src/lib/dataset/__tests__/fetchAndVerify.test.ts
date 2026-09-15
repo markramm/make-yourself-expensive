@@ -108,3 +108,81 @@ describe('fetchAndVerifyDataset', () => {
     expect(result.verified).toBe(true);
   });
 });
+
+describe('unconfirmed-placeholder normalization', () => {
+  // The registry writes `<verify: ...>` into a field it could not confirm rather than guessing.
+  // Those are prose, not values: rendered as an href one sends the reader to this site's own
+  // 404, and being a non-empty string it reads as truthy at every `if (broker.opt_out_url)`.
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(rawDataset, { status: 200 })),
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('hands components no placeholder URL to render as a link', async () => {
+    const result = await fetchAndVerifyDataset('/data/brokers.json');
+    const leaked = result.brokers.filter(
+      (b) => typeof b.opt_out_url === 'string' && b.opt_out_url.startsWith('<verify:'),
+    );
+    expect(leaked.map((b) => b.id)).toEqual([]);
+  });
+
+  it('records WHY the URL is absent, which a bare null cannot express', async () => {
+    const result = await fetchAndVerifyDataset('/data/brokers.json');
+    const flagged = result.brokers.filter((b) => b.route_unconfirmed);
+    expect(flagged.length).toBeGreaterThan(0);
+    // Every flagged entry must also have been nulled, or the badge and the link disagree.
+    expect(flagged.every((b) => b.opt_out_url === null)).toBe(true);
+  });
+
+  it('does not flag a broker that simply has no URL', async () => {
+    const result = await fetchAndVerifyDataset('/data/brokers.json');
+    const emailOnly = result.brokers.filter((b) => b.opt_out_url === null && !b.route_unconfirmed);
+    // Email- and phone-only brokers legitimately have no URL and must not be badged as
+    // unconfirmed routes -- that would put the warning on rows where nothing is wrong.
+    expect(emailOnly.length).toBeGreaterThan(0);
+  });
+
+  it('restores the phone number on phone-only rows the placeholder had hidden', async () => {
+    // A truthy placeholder made `!broker.opt_out_url` false, so BrokerRowGuided silently
+    // dropped "Call ..." on exactly the rows where the number IS the opt-out route.
+    const result = await fetchAndVerifyDataset('/data/brokers.json');
+    const nowShowing = result.brokers.filter(
+      (b) => b.tier === 'guided' && b.route_unconfirmed && b.phone && !b.opt_out_url,
+    );
+    expect(nowShowing.length).toBeGreaterThan(0);
+  });
+
+  it('hashes the registry bytes as published, not our normalized rewrite', async () => {
+    // Normalization must run AFTER the integrity check. If it ran before, the pin would only
+    // ever match a dataset we had already edited -- verifying our own edit, not the release.
+    const result = await fetchAndVerifyDataset('/data/brokers.json');
+    expect(result.verified).toBe(true);
+    expect(result.brokers.some((b) => b.route_unconfirmed)).toBe(true);
+  });
+
+  it('treats the marker as an anchored prefix, not a substring match', async () => {
+    // A real URL whose query string happens to embed the text must stay a real URL.
+    const doctored = JSON.parse(rawDataset);
+    const target = doctored.brokers.find((b: { opt_out_url: string | null }) => b.opt_out_url);
+    target.opt_out_url = 'https://example.test/x?note=<verify:%20nope>';
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(doctored), { status: 200 })));
+    const result = await fetchAndVerifyDataset('/data/brokers.json');
+    const seen = result.brokers.find((b) => b.id === target.id);
+    expect(seen?.opt_out_url).toBe('https://example.test/x?note=<verify:%20nope>');
+    expect(seen?.route_unconfirmed).toBeFalsy();
+  });
+
+  it('normalizes an unconfirmed opt-out EMAIL the same way', async () => {
+    const result = await fetchAndVerifyDataset('/data/brokers.json');
+    const leaked = result.brokers.filter(
+      (b) => typeof b.opt_out_email === 'string' && b.opt_out_email.startsWith('<verify:'),
+    );
+    expect(leaked.map((b) => b.id)).toEqual([]);
+    expect(result.brokers.some((b) => b.opt_out_email_unconfirmed)).toBe(true);
+  });
+});

@@ -39,6 +39,25 @@ describe('shipped dataset', () => {
     expect(stranded.map((b) => b.id)).toEqual([]);
   });
 
+  it('gives every broker a way to act AFTER unconfirmed placeholders are nulled', () => {
+    // The check above reads the raw file, where a `<verify: ...>` placeholder counts as a URL
+    // and hides this entirely. The app never sees that string -- fetchAndVerify.ts nulls it --
+    // so the reader-facing question is whether a route survives normalization. 17 entries do
+    // not, 12 of them crucial, and for those the instructions ARE the route: the row must say
+    // so rather than rendering a toggle above nothing. This asserts the fallback exists in the
+    // data, so the UI always has something true to show.
+    const isPlaceholder = (v: unknown) => typeof v === 'string' && v.startsWith('<verify:');
+    const routeless = brokers.filter((b) => {
+      const url = isPlaceholder(b.opt_out_url) ? null : b.opt_out_url;
+      const email = isPlaceholder(b.opt_out_email) ? null : b.opt_out_email;
+      return !url && !email && !b.phone;
+    });
+    const withoutGuidance = routeless.filter(
+      (b) => String(b.instructions_md ?? '').trim().length < 40,
+    );
+    expect(withoutGuidance.map((b) => b.id)).toEqual([]);
+  });
+
   it('gives every broker non-empty instructions', () => {
     const blank = brokers.filter((b) => !String(b.instructions_md ?? '').trim());
     expect(blank.map((b) => b.id)).toEqual([]);

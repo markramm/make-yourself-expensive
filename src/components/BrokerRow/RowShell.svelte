@@ -151,12 +151,14 @@
     padding: 0.1rem 0.4rem;
     border-radius: 2px;
   }
+  /* Filled badges use the -surface tokens, not --seal/--graphite: those are tuned as text
+     on paper and go too light in dark mode to carry white text. See BaseLayout.astro. */
   .priority-crucial {
-    background: var(--seal, #8a1c1c);
+    background: var(--seal-surface, #8a1c1c);
     color: white;
   }
   .priority-high {
-    background: var(--graphite, #6b6459);
+    background: var(--graphite-surface, #6b6459);
     color: white;
   }
   .priority-standard {
