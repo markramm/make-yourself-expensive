@@ -73,6 +73,26 @@ const LINK_EASE: Record<string, number> = {
 };
 
 /**
+ * A modest nudge toward entries a human has actually confirmed against the broker's own page.
+ *
+ * Only 37 of 493 entries are verified, and the batching had no term for it, so the first
+ * batch a new reader met was five unverified entries out of seven -- while 31 followable,
+ * verified, live-link brokers sat further down the list. That is the wrong first sitting for
+ * the report /testing calls the most valuable one ("pick one broker and follow it the whole
+ * way"): when an unverified entry fails, the tester cannot tell whether the opt-out is broken
+ * or the instruction was simply never checked, and the report loses most of its value.
+ *
+ * Deliberately small, and deliberately multiplicative rather than a separate sort key:
+ * verification is a tiebreaker among comparable work, never a reason to reorder the list
+ * wholesale. Unverified entries stay fully in the flow -- discovering that one of them is
+ * WRONG is the single most valuable correction this project can receive, so they must not be
+ * banished to the end. 1.25 is bounded by two existing contracts that both still hold:
+ * a verified crucial+guided entry (1.5) must not outrank an easy high-priority one (2.0), and
+ * a verified crucial entry with a dead link (0.75) must not outrank a live standard one (1.0).
+ */
+const VERIFIED_BONUS = 1.25;
+
+/**
  * The ordering score: value of doing it, times the odds of actually getting it done.
  *
  * Strict priority-then-tier ordering put a crucial CAPTCHA-guarded broker with a dead link
@@ -84,10 +104,12 @@ const LINK_EASE: Record<string, number> = {
  * Higher is better. Exported so the ordering can be asserted directly in tests.
  */
 export function batchScoreFor(
-  broker: Pick<Broker, 'priority' | 'tier'> & Partial<Pick<Broker, 'link_status'>>,
+  broker: Pick<Broker, 'priority' | 'tier'> &
+    Partial<Pick<Broker, 'link_status' | 'last_verified'>>,
 ): number {
   const linkEase = broker.link_status ? (LINK_EASE[broker.link_status] ?? 0.9) : 0.9;
-  return PRIORITY_VALUE[broker.priority] * TIER_EASE[broker.tier] * linkEase;
+  const verified = broker.last_verified ? VERIFIED_BONUS : 1;
+  return PRIORITY_VALUE[broker.priority] * TIER_EASE[broker.tier] * linkEase * verified;
 }
 
 // Target weight per batch. ~8 lands around "5 auto" or "4 assisted" or "2 guided" or a mix
