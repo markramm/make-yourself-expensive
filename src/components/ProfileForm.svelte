@@ -7,7 +7,7 @@
   This is optional, and only used for two things: pre-filling the opt-out emails and forms
   you send yourself, and picking the right legal citation for your state (several states now
   have consumer-privacy laws — this determines which one your requests reference). You can
-  skip straight to <a href="/brokers">the broker list</a> and fill this in later, but any
+  skip straight to <a href="/brokers/guide/">opting out</a> and fill this in later, but any
   broker row that composes an email or has fields to copy will be blank until you do.
 </p>
 

@@ -7,10 +7,13 @@ import GuidedBatch from '../../components/GuidedBatch.svelte';
   title="Guided Opt-Out"
   description="Work through data broker opt-outs a few at a time, in sensible order -- one sitting at a time, free, no account."
 >
-  <h1>Guided opt-out</h1>
+  <h1>Opt out, a few at a time</h1>
   <p class="intro">
-    Work through a few brokers at a time, in order of what matters most. Check one off, the
-    list gets shorter. <a href="/brokers">Prefer the full list?</a>
+    Working in order of what matters most — highest value and easiest first. Check one off and
+    the list gets shorter. Come back whenever; your progress stays in this browser.
+  </p>
+  <p class="intro secondary">
+    <a href="/brokers">See all brokers</a>
     · <a href="/switch-devices">Switching devices?</a>
     · <a href="/harden/">Harden your devices too</a>
   </p>
@@ -21,5 +24,8 @@ import GuidedBatch from '../../components/GuidedBatch.svelte';
   .intro {
     color: var(--graphite, #6b6459);
     font-size: 0.95rem;
+  }
+  .secondary {
+    font-size: 0.9rem;
   }
 </style>
