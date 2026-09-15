@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { routeReportUrl } from '../reportLink';
+import { routeReportUrl, brokerReportUrl } from '../reportLink';
 import { PINNED_DATASET } from '../../data/dataset-manifest';
 
 const broker = {
@@ -82,5 +82,77 @@ describe('routeReportUrl: says which kind of gap this is', () => {
     const title = new URL(routeReportUrl(broker)).searchParams.get('title');
     expect(title).toContain('BackgroundCheck.run');
     expect(title).toContain('backgroundcheck.run');
+  });
+});
+
+describe('brokerReportUrl: the report every row can file', () => {
+  const ordinary = {
+    id: 'spokeo-com',
+    name: 'Spokeo',
+    domain: 'spokeo.com',
+    last_verified: null as string | null,
+  };
+
+  it('files against the dataset repo, like the routing report', () => {
+    expect(brokerReportUrl(ordinary)).toContain('data-broker-registry/issues/new');
+    expect(brokerReportUrl(ordinary)).not.toContain('make-yourself-expensive/issues');
+  });
+
+  it('produces a valid, fully-encoded URL', () => {
+    const url = brokerReportUrl(ordinary);
+    expect(() => new URL(url)).not.toThrow();
+    expect(url).not.toMatch(/[\n ]/);
+  });
+
+  it('carries the broker id and dataset version, so a report is actionable', () => {
+    // The three generic links on /testing lose exactly this: which broker, which dataset
+    // version. Without them a maintainer cannot tell which entry to fix.
+    const body = bodyOf(brokerReportUrl(ordinary));
+    expect(body).toContain('spokeo-com');
+    expect(body).toContain(PINNED_DATASET.datasetVersion);
+  });
+
+  it('asks the questions /testing says matter most', () => {
+    const body = bodyOf(brokerReportUrl(ordinary));
+    expect(body).toContain('What did the tool say to expect?');
+    expect(body).toContain('What actually happened?');
+    expect(body).toContain('Did the listing come down?');
+  });
+
+  it('says a first-hand account matters most where nobody has confirmed the entry', () => {
+    const body = bodyOf(brokerReportUrl({ ...ordinary, last_verified: null }));
+    expect(body).toContain('Nobody has confirmed this entry');
+  });
+
+  it('frames a confirmed entry as possibly stale rather than unchecked', () => {
+    // A verified entry can still break -- brokers redesign forms and retire domains -- so the
+    // link stays on verified rows, asking a different question.
+    const body = bodyOf(brokerReportUrl({ ...ordinary, last_verified: '2026-01-15' }));
+    expect(body).toContain('2026-01-15');
+    expect(body).toContain('has since changed');
+    expect(body).not.toContain('Nobody has confirmed this entry');
+  });
+
+  it('never asks for anything about the reporter', () => {
+    const body = bodyOf(brokerReportUrl(ordinary)).toLowerCase();
+    for (const prompt of ['your name', 'your address', 'your phone', 'your email', 'date of birth']) {
+      expect(body).not.toContain(prompt);
+    }
+    expect(body).toMatch(/do not paste your real name/i);
+  });
+
+  it('labels the issue as a tester report for triage', () => {
+    const labels = new URL(brokerReportUrl(ordinary)).searchParams.get('labels');
+    expect(labels).toContain('tester-report');
+  });
+
+  it('stays distinct from the routing report, which asks a narrower question', () => {
+    // Merging the two would prompt someone who just completed a working opt-out for a URL we
+    // already have.
+    const general = bodyOf(brokerReportUrl(ordinary));
+    const routing = bodyOf(routeReportUrl({ ...ordinary, route_unconfirmed: true }));
+    expect(general).toContain('What actually happened?');
+    expect(routing).toContain('The opt-out page you found');
+    expect(general).not.toContain('The opt-out page you found');
   });
 });
