@@ -239,6 +239,57 @@ describe('batchScoreFor -- value times ease', () => {
     expect(absent).toBeGreaterThan(brokenSame);
   });
 
+  it('prefers a human-verified entry over an otherwise identical unverified one', () => {
+    // Only 37 of 493 entries are verified, and without this term the first batch a tester met
+    // was five unverified entries out of seven -- so a failure told them nothing about whether
+    // the opt-out or the instruction was at fault.
+    const verified = batchScoreFor({
+      priority: 'crucial', tier: 'auto', link_status: 'live', last_verified: '2026-07-03',
+    });
+    const unverified = batchScoreFor({ priority: 'crucial', tier: 'auto', link_status: 'live' });
+    expect(verified).toBeGreaterThan(unverified);
+  });
+
+  it('treats last_verified: null the same as the field being absent', () => {
+    const explicitNull = batchScoreFor({
+      priority: 'high', tier: 'assisted', link_status: 'live', last_verified: null,
+    });
+    const absent = batchScoreFor({ priority: 'high', tier: 'assisted', link_status: 'live' });
+    expect(explicitNull).toBe(absent);
+  });
+
+  it('does not let verification outweigh ease: a verified hard crucial still loses to an easy high', () => {
+    // The bound that sizes VERIFIED_BONUS. If verification could flip this, the flow would
+    // start handing testers CAPTCHA-guarded multi-step brokers again, which is the exact
+    // regression the value-times-ease ordering was introduced to fix.
+    const verifiedHardCrucial = batchScoreFor({
+      priority: 'crucial', tier: 'guided', link_status: 'live', last_verified: '2026-07-03',
+    });
+    const easyHigh = batchScoreFor({ priority: 'high', tier: 'auto', link_status: 'live' });
+    expect(verifiedHardCrucial).toBeLessThan(easyHigh);
+  });
+
+  it('does not resurrect a dead link: a verified broken entry still loses to a live standard one', () => {
+    // The other bound. Being confirmed-correct months ago does not help a reader whose click
+    // lands on a page that no longer exists.
+    const verifiedBroken = batchScoreFor({
+      priority: 'crucial', tier: 'auto', link_status: 'broken', last_verified: '2026-07-03',
+    });
+    const liveStandard = batchScoreFor({ priority: 'standard', tier: 'auto', link_status: 'live' });
+    expect(verifiedBroken).toBeLessThan(liveStandard);
+  });
+
+  it('keeps unverified entries in the ordinary flow rather than banishing them', () => {
+    // Finding that an unverified entry is WRONG is the most valuable correction this project
+    // can get, so the bonus must stay a nudge: an unverified crucial one-click email still
+    // outranks a verified standard one.
+    const unverifiedCrucial = batchScoreFor({ priority: 'crucial', tier: 'auto', link_status: 'live' });
+    const verifiedStandard = batchScoreFor({
+      priority: 'standard', tier: 'auto', link_status: 'live', last_verified: '2026-07-03',
+    });
+    expect(unverifiedCrucial).toBeGreaterThan(verifiedStandard);
+  });
+
   it('is deterministic for equal scores', () => {
     const a = { id: 'a', name: 'Alpha', priority: 'high', tier: 'auto', link_status: 'live' } as never;
     const b = { id: 'b', name: 'Beta', priority: 'high', tier: 'auto', link_status: 'live' } as never;
