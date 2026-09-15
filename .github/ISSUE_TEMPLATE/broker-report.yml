@@ -1,0 +1,52 @@
+name: Broker report (tester)
+description: A broker's opt-out instructions were wrong, incomplete, or the site is gone
+title: "Broker report: "
+labels: ["tester-report", "broker"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you — this is the highest-value report this project gets.
+
+        **Please do not include your real name, address, phone, or the contents of your
+        profile.** Issues are public. Describe the shape of the problem, not your data.
+  - type: input
+    id: broker
+    attributes:
+      label: Which broker?
+      placeholder: spokeo.com
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did the tool tell you to expect?
+      description: Fields to fill, whether there'd be a CAPTCHA, where to find a listing URL.
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened?
+      placeholder: Different fields, an unexpected CAPTCHA, a dead page, an account requirement...
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Did the listing come down?
+      options:
+        - Not yet / too early to tell
+        - "Yes"
+        - "No — still listed after a week or more"
+        - Didn't get far enough to submit
+  - type: input
+    id: env
+    attributes:
+      label: Browser and device
+      placeholder: Firefox 141 on macOS / Safari on iPhone
+  - type: checkboxes
+    id: pii
+    attributes:
+      label: Before you submit
+      options:
+        - label: I have not included my real name, address, phone, or profile contents.
+          required: true

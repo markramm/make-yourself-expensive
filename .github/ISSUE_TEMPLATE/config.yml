@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Wrong broker data (URL, fields, dead site)
+    url: https://github.com/markramm/data-broker-registry/issues/new
+    about: >-
+      Corrections to a broker's opt-out URL, required fields, or a site that no longer
+      exists live in the dataset repo. One markdown file per broker, no code required.
+      If you're not sure which repo, file it here anyway — we'll move it.
+  - name: How to test this site
+    url: https://become-expensive.transparencycascade.org/testing
+    about: What's worth testing, what's known-incomplete, and what a useful report looks like.

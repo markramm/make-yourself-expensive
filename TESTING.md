@@ -1,5 +1,9 @@
 # Testing this site
 
+> **Testers: read the live page instead — <https://become-expensive.transparencycascade.org/testing>**
+> It has the same guidance plus one-click pre-filled issue links, and it is the version kept
+> current. This file is the developer-facing copy.
+
 This is an **alpha**. It works, it is not finished, and the fastest way to make it better
 is someone who is not its author trying to actually opt out of something with it.
 
@@ -86,8 +90,10 @@ phone" is a useful bug.
 
 ## Where to send it
 
-Open an issue at <https://github.com/markramm/make-yourself-expensive/issues>, or reply to
-the post that brought you here if a GitHub account is a barrier. **Do not paste your real
+Use the pre-filled links on the [live testing page](https://become-expensive.transparencycascade.org/testing),
+or open an issue directly at <https://github.com/markramm/make-yourself-expensive/issues/new/choose>
+— there are three tester templates (broker report, site bug, confusing). If a GitHub account is
+a barrier, reply to the post that brought you here. **Do not paste your real
 name, address, or the contents of your profile into an issue** — describe the shape of the
 problem, not your personal data.
 

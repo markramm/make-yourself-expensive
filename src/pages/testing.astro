@@ -1,0 +1,190 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const REPO = 'https://github.com/markramm/make-yourself-expensive';
+const DATA_REPO = 'https://github.com/markramm/data-broker-registry';
+
+// Prefilled issue links. Deliberately NOT a form on this site: there is no server here,
+// so a form would either need one (breaking the whole premise) or quietly lose the report.
+// A prefilled GitHub link keeps the no-server guarantee and leaves the words in the
+// tester's own hands -- they see and edit everything before it is sent.
+const brokerBody = `**Which broker?**
+(name or domain, e.g. spokeo.com)
+
+**What did the tool tell you to expect?**
+
+
+**What actually happened?**
+(different fields? unexpected CAPTCHA? page missing? account required?)
+
+**Did the listing come down?**
+(not yet / yes, after ___ days / no)
+
+**Browser and device**
+(e.g. Firefox 141 on macOS, Safari on iPhone)
+
+---
+Please do not paste your real name, address, or profile contents here.
+Describe the shape of the problem, not your personal data.`;
+
+const siteBody = `**Where in the site?**
+(page URL or section)
+
+**What happened?**
+
+
+**What did you expect instead?**
+
+
+**Browser and device**
+
+
+---
+Please do not paste your real name, address, or profile contents here.`;
+
+const confusingBody = `**What did you read?**
+(page and roughly where on it)
+
+**Where did you get lost?**
+
+
+**What would have helped?**
+
+
+---
+This is the most valuable report from a first-time reader, and it expires:
+once you have used the tool, you cannot see it fresh again.`;
+
+const u = (title: string, body: string, labels: string) =>
+  `${REPO}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}&labels=${encodeURIComponent(labels)}`;
+
+const brokerUrl = u('Broker report: ', brokerBody, 'tester-report,broker');
+const siteUrl = u('Site bug: ', siteBody, 'tester-report,bug');
+const confusingUrl = u('Confusing: ', confusingBody, 'tester-report,clarity');
+---
+
+<BaseLayout title="Testing this site">
+  <h1>Testing this site</h1>
+
+  <p class="lede">
+    This is an <strong>alpha</strong>. It works; it is not finished. The fastest way to make
+    it better is someone who did not build it trying to actually opt out of something with it.
+  </p>
+
+  <p>
+    You do not need to be technical. If you can follow instructions and say "this step didn't
+    work," that is the whole job.
+  </p>
+
+  <h2>Before you start</h2>
+
+  <p>
+    <strong>Nothing you type into this site leaves your browser.</strong> No server receives
+    your name, address, or progress — it is a static page, and everything is stored locally on
+    your device. You can <a href={REPO}>read the code</a>, or have someone technical you trust
+    read it. The one exception is an aggregate, cookie-free page-view count, which never
+    carries anything from your profile and never records which broker you clicked.
+  </p>
+
+  <p class="callout">
+    <strong>One caution.</strong> This is alpha software handling personal information. If your
+    address being findable is a physical safety matter — you are an abuse survivor, you are
+    being harassed, you hold public office — please don't learn this tool on your live data.
+    Try it with a throwaway profile first, or wait for a later release.
+  </p>
+
+  <h2>The three things most worth testing</h2>
+
+  <h3>1. Does an opt-out actually work, start to finish?</h3>
+  <p>
+    Pick <strong>one</strong> broker and follow it the whole way. This is the highest-value
+    report by a wide margin — it is the one thing the author cannot do at scale alone. Did the
+    broker's page look like what we said? Were the fields we listed the fields it asked for?
+    Was there a CAPTCHA we didn't warn you about? <strong>Did your listing actually come
+    down, and how long did it take?</strong>
+  </p>
+
+  <h3>2. Is the instruction wrong, or just hard?</h3>
+  <p>
+    Those are different bugs and we want them apart. <em>"The page said to paste a listing URL
+    but there's no field for it"</em> means the instruction is wrong. <em>"I couldn't figure
+    out where to find my listing URL"</em> means it is unclear. Both matter; the second is
+    more common and gets under-reported because people assume it's their fault. It isn't.
+  </p>
+
+  <h3>3. Does it make sense before you've done it once?</h3>
+  <p>
+    Read the home page and the top of the broker list as though you'd never heard of any of
+    this. Where do you get lost? Which word did you have to look up? The author has stared at
+    this for months and can't see it fresh anymore. You can — exactly once. Spend it.
+  </p>
+
+  <h2>File a report</h2>
+
+  <p>
+    These open a pre-filled GitHub issue. You'll see everything before it's sent, and you can
+    edit or delete any of it. A GitHub account is required — if that's a barrier, reply to the
+    post that brought you here instead.
+  </p>
+
+  <ul class="report-links">
+    <li><a href={brokerUrl}>A broker's instructions were wrong or incomplete →</a></li>
+    <li><a href={siteUrl}>Something on the site is broken →</a></li>
+    <li><a href={confusingUrl}>Something was confusing or unclear →</a></li>
+  </ul>
+
+  <p>
+    <strong>Please don't paste your real name, address, or profile contents into an issue.</strong>
+    Describe the shape of the problem, not your personal data. Issues are public.
+  </p>
+
+  <h2>Known-incomplete — no need to report these</h2>
+
+  <ul>
+    <li>
+      <strong>Most entries are marked UNVERIFIED</strong> — 456 of 493 right now. That badge is
+      honest, not broken: it means no human has yet confirmed the routing against the broker's
+      own page. Finding that an unverified entry is <em>wrong</em> is exactly the contribution
+      we want. The badge tells you where to look.
+    </li>
+    <li><strong>The <a href="/harden/">Harden</a> section is thin.</strong> Device guides are next, not done.</li>
+    <li>
+      <strong>Some brokers are dead.</strong> Domains lapse constantly in this industry.
+      Telling us a site no longer exists is a real fix — we drop them.
+    </li>
+    <li>
+      <strong>No sync between devices.</strong> By design. Progress lives in one browser on one
+      machine, and clearing site data clears it.
+    </li>
+  </ul>
+
+  <h2>If the bug is in the broker data itself</h2>
+
+  <p>
+    Wrong URL, wrong fields, or a dead site belongs in the dataset repo rather than this one:
+    <a href={DATA_REPO}>data-broker-registry</a>. One markdown file per broker, no code
+    required — see its <code>CONTRIBUTING.md</code>. The broker-report link above files to the
+    app repo, which is fine; we move them.
+  </p>
+
+  <h2>Why this exists</h2>
+
+  <p>
+    A 2024 <em>Consumer Reports</em> study found paid removal services took down about
+    <strong>35%</strong> of participants' records over four months. Doing it by hand removed
+    <strong>70%</strong>. Free DIY matches the best paid service and beats the rest — so the
+    only thing standing between most people and that 70% is an hour and knowing where to
+    start. This site is the "where to start," and testing is what makes it trustworthy enough
+    to hand to someone else.
+  </p>
+
+  <style>
+    .lede { font-size: 1.1rem; }
+    .callout {
+      border-left: 3px solid currentColor;
+      padding-left: 1rem;
+      opacity: 0.9;
+    }
+    .report-links { line-height: 2; }
+  </style>
+</BaseLayout>

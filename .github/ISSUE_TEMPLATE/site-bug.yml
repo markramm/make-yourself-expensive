@@ -1,0 +1,39 @@
+name: Site bug (tester)
+description: Something on the site is broken, missing, or doesn't work
+title: "Site bug: "
+labels: ["tester-report", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Please do not include your real name, address, phone, or profile contents.**
+        Issues are public.
+  - type: input
+    id: where
+    attributes:
+      label: Where in the site?
+      placeholder: /brokers, the profile page, the Harden checklist...
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+  - type: input
+    id: env
+    attributes:
+      label: Browser and device
+      placeholder: Firefox 141 on macOS / Safari on iPhone
+  - type: checkboxes
+    id: pii
+    attributes:
+      label: Before you submit
+      options:
+        - label: I have not included my real name, address, phone, or profile contents.
+          required: true

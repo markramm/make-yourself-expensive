@@ -103,9 +103,24 @@ const CSP = [
         <a href="/resources">Resources</a>
       </div>
     </nav>
+    <!-- Alpha banner, not a fifth nav item. The nav is the tool's spine (Profile -> Opt-Out
+         -> Harden -> Resources) and a permanent "Testing" entry would read as clutter to the
+         general audience this is for. A banner tells every visitor the true thing -- this is
+         unfinished -- and routes the willing to /testing. Delete this block when alpha ends. -->
+    <aside class="alpha-banner">
+      <strong>Alpha.</strong> This works but isn't finished — some broker instructions are
+      unverified. <a href="/testing">How to test it, and how to report what you find →</a>
+    </aside>
     <main>
       <slot />
     </main>
+    <footer class="site-footer">
+      <a href="/testing">Testing &amp; feedback</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/markramm/make-yourself-expensive">Source</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/markramm/data-broker-registry">Broker dataset</a>
+    </footer>
   </body>
 </html>
 
@@ -137,6 +152,27 @@ const CSP = [
     color: var(--ink);
     font-family: Georgia, 'Times New Roman', serif;
     line-height: 1.5;
+  }
+  .alpha-banner {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--rule);
+    background: color-mix(in srgb, var(--seal) 8%, var(--paper));
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  .alpha-banner a {
+    color: var(--seal);
+    white-space: nowrap;
+  }
+  .site-footer {
+    margin-top: 3rem;
+    padding: 1.25rem 1rem 2rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.85rem;
+    color: var(--graphite);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
   .site-nav {
     display: flex;

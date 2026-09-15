@@ -1,0 +1,28 @@
+name: Something was confusing (tester)
+description: You got lost, or had to look up a word, or couldn't tell what to do next
+title: "Confusing: "
+labels: ["tester-report", "clarity"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the report that expires. Once you've used the tool you can't see it fresh
+        again — so if something confused you the first time through, that's worth telling us
+        even if you figured it out afterwards. It is not your fault the writing was unclear.
+  - type: input
+    id: where
+    attributes:
+      label: What were you reading?
+      placeholder: The home page, the top of the broker list, a specific broker's steps...
+    validations:
+      required: true
+  - type: textarea
+    id: lost
+    attributes:
+      label: Where did you get lost?
+    validations:
+      required: true
+  - type: textarea
+    id: help
+    attributes:
+      label: What would have helped?
