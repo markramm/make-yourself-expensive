@@ -51,6 +51,14 @@
     ZIP
     <input type="text" bind:value={$profileStore.zip} autocomplete="postal-code" />
   </label>
+  <label>
+    Date of birth <span class="optional">— optional</span>
+    <input type="date" bind:value={$profileStore.dob} autocomplete="bday" />
+    <span class="field-note">
+      Some brokers won't process an opt-out without it. It is only ever copied to your
+      clipboard for a form that asks — it is never added to an email for you.
+    </span>
+  </label>
 </form>
 
 <style>
@@ -69,6 +77,7 @@
   input[type='text'],
   input[type='email'],
   input[type='tel'],
+  input[type='date'],
   select {
     padding: 0.4rem 0.5rem;
     border: 1px solid var(--rule);
@@ -79,6 +88,15 @@
   }
   select option {
     color: initial;
+  }
+  .optional {
+    color: var(--graphite);
+    font-weight: normal;
+  }
+  .field-note {
+    font-size: 0.8rem;
+    color: var(--graphite);
+    line-height: 1.35;
   }
   .why-note {
     font-size: 0.9rem;

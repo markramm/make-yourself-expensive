@@ -54,6 +54,13 @@ interface RequestTemplate {
   buildBody: (profile: Profile, broker: Broker, today: string) => string;
 }
 
+// NOTE ON DATE OF BIRTH -- a deliberate omission, not an oversight.
+// profile.dob exists (37 brokers' forms require it) but is never written into a composed
+// request body. These templates ask a broker to LOCATE a record, and name + email + address
+// already do that. Volunteering a date of birth in plaintext email, to a company whose
+// business is aggregating identifiers, hands them a stronger key than they had before the
+// request -- the opposite of the point. DOB reaches a broker only via the clipboard, on a
+// form the reader is looking at, when that form actually demands it.
 function stateSpecificTemplate(law: StateLawInfo): RequestTemplate {
   return {
     buildSubject: (broker) => `Data Deletion and Opt-Out Request — ${broker.name}`,

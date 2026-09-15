@@ -13,7 +13,7 @@ const STORAGE_KEY = 'protect.v1.profile';
 // Bump when Profile's shape changes, and add a migration below FROM the old version. This
 // is also the version stamped into export files (see lib/crypto/exportImport.ts), so an
 // import from an older export can be upgraded the same way an old localStorage read is.
-export const PROFILE_SCHEMA_VERSION = 2;
+export const PROFILE_SCHEMA_VERSION = 3;
 
 export interface Profile {
   fullName: string;
@@ -24,6 +24,17 @@ export interface Profile {
   /** Two-letter USPS code (e.g. "CA"), or '' if unset/unrecognized -- see lib/usStates.ts. */
   state: string;
   zip: string;
+  /**
+   * ISO date (YYYY-MM-DD), or '' if unset. Optional, and deliberately the last field added.
+   *
+   * 37 brokers require a date of birth to process an opt-out, so without it those rows hand
+   * the reader a field they cannot fill. But DOB is a strong identifier -- with a name it
+   * narrows an identity far more than an email or a phone number does -- so it is treated
+   * more carefully than the rest of the profile: never auto-inserted into a composed email
+   * (see lib/templates/ccpaRequest.ts), only copied to the clipboard when a form the reader
+   * is looking at actually demands it.
+   */
+  dob: string;
 }
 
 const EMPTY_PROFILE: Profile = {
@@ -34,6 +45,7 @@ const EMPTY_PROFILE: Profile = {
   city: '',
   state: '',
   zip: '',
+  dob: '',
 };
 
 // schema_version 0 -> 1: no shape change yet, just adopting the versioned-storage wrapper.
@@ -55,6 +67,9 @@ const PROFILE_MIGRATIONS: Migration<Profile>[] = [
       return { ...merged, state: coerceStateToCode(merged.state) };
     },
   },
+  // schema_version 2 -> 3: added optional `dob`. No transformation needed -- spreading over
+  // EMPTY_PROFILE supplies '' for anyone whose stored profile predates the field.
+  { from: 2, migrate: (data) => ({ ...EMPTY_PROFILE, ...(data as Partial<Profile>) }) },
 ];
 
 function loadFromStorage(): Profile {

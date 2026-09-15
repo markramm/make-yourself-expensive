@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nextBatch, batchFromIds, sortForBatching, weightFor, DEFAULT_BATCH_WEIGHT } from '../nextBatch';
+import { nextBatch, batchFromIds, sortForBatching, weightFor, DEFAULT_BATCH_WEIGHT, batchScoreFor } from '../nextBatch';
 import type { Broker } from '../../dataset/fetchAndVerify';
 import type { ProgressMap } from '../../../stores/progress';
 
@@ -193,5 +193,56 @@ describe('batchFromIds -- resuming a persisted in-progress batch', () => {
     const batch = batchFromIds(brokers, ['a', 'b'], progress);
     expect(batch!.remainingAfterBatch).toBe(0);
     expect(batch!.isFinalBatch).toBe(true);
+  });
+});
+
+describe('batchScoreFor -- value times ease', () => {
+  it('ranks an easy crucial broker above a hard one', () => {
+    const easy = batchScoreFor({ priority: 'crucial', tier: 'auto', link_status: 'live' });
+    const hard = batchScoreFor({ priority: 'crucial', tier: 'guided', link_status: 'live' });
+    expect(easy).toBeGreaterThan(hard);
+  });
+
+  it('lets an easy high-priority broker outrank a hard crucial one', () => {
+    // This is the whole point of the change: strict priority ordering put a CAPTCHA-guarded
+    // crucial broker ahead of a one-click high-priority email.
+    const easyHigh = batchScoreFor({ priority: 'high', tier: 'auto', link_status: 'live' });
+    const hardCrucial = batchScoreFor({ priority: 'crucial', tier: 'guided', link_status: 'live' });
+    expect(easyHigh).toBeGreaterThan(hardCrucial);
+  });
+
+  it('still puts a crucial broker ahead of a standard one at equal ease', () => {
+    const crucial = batchScoreFor({ priority: 'crucial', tier: 'auto', link_status: 'live' });
+    const standard = batchScoreFor({ priority: 'standard', tier: 'auto', link_status: 'live' });
+    expect(crucial).toBeGreaterThan(standard);
+  });
+
+  it('sinks a broken link below everything comparable', () => {
+    const broken = batchScoreFor({ priority: 'crucial', tier: 'auto', link_status: 'broken' });
+    const liveStandard = batchScoreFor({ priority: 'standard', tier: 'auto', link_status: 'live' });
+    expect(broken).toBeLessThan(liveStandard);
+  });
+
+  it('does not banish bot-blocked -- it works for humans', () => {
+    const blocked = batchScoreFor({ priority: 'crucial', tier: 'auto', link_status: 'bot-blocked' });
+    const broken = batchScoreFor({ priority: 'crucial', tier: 'auto', link_status: 'broken' });
+    const liveStandardGuided = batchScoreFor({ priority: 'standard', tier: 'guided', link_status: 'live' });
+    expect(blocked).toBeGreaterThan(broken);
+    expect(blocked).toBeGreaterThan(liveStandardGuided);
+  });
+
+  it('treats a missing link_status as near-live rather than penalising it', () => {
+    const absent = batchScoreFor({ priority: 'high', tier: 'assisted' });
+    const live = batchScoreFor({ priority: 'high', tier: 'assisted', link_status: 'live' });
+    const brokenSame = batchScoreFor({ priority: 'high', tier: 'assisted', link_status: 'broken' });
+    expect(absent).toBeLessThanOrEqual(live);
+    expect(absent).toBeGreaterThan(brokenSame);
+  });
+
+  it('is deterministic for equal scores', () => {
+    const a = { id: 'a', name: 'Alpha', priority: 'high', tier: 'auto', link_status: 'live' } as never;
+    const b = { id: 'b', name: 'Beta', priority: 'high', tier: 'auto', link_status: 'live' } as never;
+    expect(sortForBatching([b, a]).map((x: { id: string }) => x.id)).toEqual(['a', 'b']);
+    expect(sortForBatching([a, b]).map((x: { id: string }) => x.id)).toEqual(['a', 'b']);
   });
 });

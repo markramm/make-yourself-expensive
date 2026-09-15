@@ -30,6 +30,8 @@
         return profile.phone;
       case 'address':
         return [profile.address, profile.city, profile.state, profile.zip].filter(Boolean).join(', ');
+      case 'dob':
+        return profile.dob;
       default:
         return '';
     }

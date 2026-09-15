@@ -11,6 +11,7 @@ const shortProfile: Profile = {
   city: '',
   state: 'CA',
   zip: '',
+  dob: '1980-04-12',
 };
 
 const longProfile: Profile = {
@@ -21,6 +22,7 @@ const longProfile: Profile = {
   city: 'San Francisco',
   state: 'CA',
   zip: '94103-1234',
+  dob: '1980-04-12',
 };
 
 function makeBroker(overrides: Partial<Broker> = {}): Broker {
@@ -179,5 +181,33 @@ describe('planDelivery: mailto vs .eml branching', () => {
       expect(plan.href).not.toContain('%0D%0D%0A');
       expect(plan.href).toContain('line1%0D%0Aline2');
     }
+  });
+});
+
+describe('date of birth is never volunteered to a broker', () => {
+  // profile.dob exists because 37 brokers' FORMS require it, but a composed email must never
+  // hand it over unasked: these templates ask a broker to locate a record, and name + email +
+  // address already do that. Adding a DOB gives a company whose business is aggregating
+  // identifiers a stronger key than it had before the request. This is a guarantee, not a
+  // preference, so it is asserted rather than left to a comment in ccpaRequest.ts.
+  const withDob: Profile = { ...longProfile, dob: '1980-04-12' };
+
+  it('omits dob from a state-specific request body', () => {
+    const req = composeRequest({ ...withDob, state: 'CA' }, makeBroker(), '2026-07-03');
+    expect(req.body).not.toContain('1980');
+    expect(req.body).not.toContain('04-12');
+    expect(req.body.toLowerCase()).not.toContain('date of birth');
+  });
+
+  it('omits dob from a generic request body', () => {
+    const req = composeRequest({ ...withDob, state: '' }, makeBroker(), '2026-07-03');
+    expect(req.body).not.toContain('1980');
+    expect(req.body.toLowerCase()).not.toContain('date of birth');
+  });
+
+  it('still includes the identifiers that legitimately locate a record', () => {
+    const req = composeRequest({ ...withDob, state: 'CA' }, makeBroker(), '2026-07-03');
+    expect(req.body).toContain(withDob.fullName);
+    expect(req.body).toContain(withDob.email);
   });
 });
