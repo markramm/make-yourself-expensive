@@ -165,8 +165,15 @@
     background: transparent;
     border: 1px solid var(--rule, #c9c1b2);
   }
+  /* A border WIDTH and STYLE, not just a colour. `border-color` alone resolves to the
+     initial `border-style: none`, so this badge rendered as bare coloured text while its
+     three siblings (unverified, re-check due, priority) all drew a real outline -- the one
+     badge that warns a link may be dead looked the least like a badge. PR #11's "routing
+     unconfirmed" label inherits this rule, so it was affected too. Solid rather than dashed:
+     dashed is already spoken for by `unverified`, which means something different (nobody
+     has checked this entry) from a link-state warning (we checked, and it did not work). */
   .link-badge {
-    border-color: var(--seal);
+    border: 1px solid var(--seal);
     color: var(--seal);
   }
   .unverified-badge {

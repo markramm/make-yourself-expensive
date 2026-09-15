@@ -156,3 +156,78 @@ describe('GuardrailModal: the two decisions', () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 });
+
+describe('GuardrailModal: focus does not escape from the opening position', () => {
+  // Focus opens on the heading, which is tabindex="-1" and so is NOT one of the focusable
+  // controls the trap wraps between. The original trap only acted when focus was already on
+  // the first or last control, so Shift+Tab from that opening position matched neither branch
+  // and walked out into the page behind the modal -- past a dialog the reader believes is
+  // blocking them, on the one screen that guards an SSN or a government ID.
+  it('wraps Shift+Tab from the heading to the last control, rather than leaving the dialog', () => {
+    const { getByRole } = renderModal();
+    const heading = getByRole('heading', { level: 2 });
+    heading.focus();
+    expect(document.activeElement).toBe(heading);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+
+    const confirm = getByRole('button', { name: /I understand, continue/ });
+    expect(document.activeElement).toBe(confirm);
+  });
+
+  it('wraps a forward Tab from the heading to the first control', () => {
+    const { getByRole } = renderModal();
+    getByRole('heading', { level: 2 }).focus();
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+
+    const cancel = getByRole('button', { name: /Not right now/ });
+    expect(document.activeElement).toBe(cancel);
+  });
+
+  it('keeps focus inside the dialog when focus sits on the modal container itself', () => {
+    // The container is tabindex="-1" and can receive focus programmatically; it is not in the
+    // focusable list either, so it needs the same treatment as the heading.
+    const { getByRole } = renderModal();
+    const dialog = getByRole('dialog');
+    (dialog as HTMLElement).focus();
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+
+    expect(dialog.contains(document.activeElement)).toBe(true);
+  });
+});
+
+describe('GuardrailModal: focus goes back where it came from', () => {
+  it('returns focus to the element that opened it', async () => {
+    // Without this, dismissing drops focus to the top of the document and a keyboard user has
+    // to tab through the entire page to get back to the row they were working on.
+    const trigger = document.createElement('button');
+    trigger.textContent = 'Continue (sensitive info required)';
+    document.body.appendChild(trigger);
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    const { unmount } = renderModal();
+    expect(document.activeElement).not.toBe(trigger);
+
+    unmount();
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.remove();
+  });
+
+  it('does not throw when the opening element is gone by the time it closes', () => {
+    // Confirming can replace the trigger with the tier-specific action, so the node we
+    // captured may be detached. Focusing a detached node silently does nothing; the guard
+    // exists so this stays a no-op rather than an error.
+    const trigger = document.createElement('button');
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    const { unmount } = renderModal();
+    trigger.remove();
+
+    expect(() => unmount()).not.toThrow();
+  });
+});

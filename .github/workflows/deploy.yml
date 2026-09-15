@@ -12,9 +12,19 @@ permissions:
   pages: write
   id-token: write
 
+# Keyed on the event and ref, not a single shared "pages" group. With one group for
+# everything, pushing to a pull request cancelled an IN-FLIGHT PRODUCTION DEPLOY -- the PR
+# run and the main run competed for the same slot, and cancel-in-progress killed whichever
+# was already running. A half-finished Pages deploy is exactly what should never be
+# cancelled, and it was being cancelled by the routine act of updating a PR.
+#
+# Now: each PR gets its own group (a new push to that PR still supersedes its own earlier
+# run, which is the behaviour worth keeping), and deploys to main get their own serialized
+# group that nothing else can interrupt.
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-${{ github.event_name }}-${{ github.ref }}
+  # Never cancel a deploy to main partway through; superseding a PR's own earlier run is fine.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
