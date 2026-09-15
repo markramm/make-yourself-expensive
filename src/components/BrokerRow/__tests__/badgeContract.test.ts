@@ -67,3 +67,47 @@ describe('isRecheckDue: people-search listings can silently come back', () => {
     expect(progress.done).toBe(true);
   });
 });
+
+describe('link_status badges', () => {
+  it('warns on a broken link', () => {
+    const d = badgeDecisionFor({ last_verified: '2026-01-01', priority: 'crucial', link_status: 'broken' });
+    expect(d.linkWarning).toBe('link may be dead');
+    expect(d.linkWarningTitle).toBeTruthy();
+  });
+
+  it('distinguishes bot-blocked from broken -- they are different experiences', () => {
+    const broken = badgeDecisionFor({ last_verified: null, priority: 'crucial', link_status: 'broken' });
+    const blocked = badgeDecisionFor({ last_verified: null, priority: 'crucial', link_status: 'bot-blocked' });
+    expect(blocked.linkWarning).not.toBe(broken.linkWarning);
+    // Saying "broken" about a link that works for humans makes someone skip a broker they
+    // could have opted out of.
+    expect(blocked.linkWarning).not.toMatch(/dead|broken/i);
+  });
+
+  it('badges a redirect', () => {
+    const d = badgeDecisionFor({ last_verified: null, priority: 'high', link_status: 'redirect' });
+    expect(d.linkWarning).toBe('redirects');
+  });
+
+  it('stays silent on a live link', () => {
+    const d = badgeDecisionFor({ last_verified: '2026-01-01', priority: 'high', link_status: 'live' });
+    expect(d.linkWarning).toBeNull();
+    expect(d.linkWarningTitle).toBeNull();
+  });
+
+  it('stays silent on unknown -- not actionable, and it would badge a quarter of the list', () => {
+    const d = badgeDecisionFor({ last_verified: null, priority: 'standard', link_status: 'unknown' });
+    expect(d.linkWarning).toBeNull();
+  });
+
+  it('stays silent when link_status is absent entirely', () => {
+    const d = badgeDecisionFor({ last_verified: null, priority: 'standard' });
+    expect(d.linkWarning).toBeNull();
+  });
+
+  it('does not disturb the unverified contract', () => {
+    const d = badgeDecisionFor({ last_verified: null, priority: 'crucial', link_status: 'broken' });
+    expect(d.showUnverifiedBadge).toBe(true);
+    expect(d.priorityBadgeClass).toBe('priority-crucial');
+  });
+});

@@ -49,6 +49,11 @@
         <span class="name">{broker.name}</span>
       {/if}
       <span class="priority-badge {badge.priorityBadgeClass}">{broker.priority}</span>
+      {#if badge.linkWarning}
+        <span class="link-badge" title={badge.linkWarningTitle}>
+          {badge.linkWarning}
+        </span>
+      {/if}
       {#if badge.showUnverifiedBadge}
         <span class="unverified-badge" title="A human hasn't confirmed this entry against the broker's own page yet">
           unverified
@@ -138,6 +143,7 @@
   }
   .priority-badge,
   .unverified-badge,
+  .link-badge,
   .recheck-badge {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -156,6 +162,10 @@
   .priority-standard {
     background: transparent;
     border: 1px solid var(--rule, #c9c1b2);
+  }
+  .link-badge {
+    border-color: var(--seal);
+    color: var(--seal);
   }
   .unverified-badge {
     border: 1px dashed var(--graphite, #6b6459);

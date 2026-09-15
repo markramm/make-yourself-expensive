@@ -9,15 +9,57 @@ import type { Broker } from '../../lib/dataset/fetchAndVerify';
 export interface BadgeDecision {
   showUnverifiedBadge: boolean;
   priorityBadgeClass: string;
+  /** Short badge label for a non-live link, or null when the link is fine/unknown. */
+  linkWarning: string | null;
+  /** Tooltip explaining what the reader should expect, paired with linkWarning. */
+  linkWarningTitle: string | null;
 }
 
-export function badgeDecisionFor(broker: Pick<Broker, 'last_verified' | 'priority'>): BadgeDecision {
+/**
+ * Non-live link states, in the words a reader needs rather than the words the crawler used.
+ *
+ * `broken` and `bot-blocked` are very different experiences and must not be collapsed: a
+ * broken link wastes the visit entirely, while a bot-blocked one works fine for a human and
+ * only defeated our automated checker. Telling someone "this is broken" when it isn't is its
+ * own harm -- they skip a broker they could have opted out of.
+ *
+ * `unknown` deliberately gets NO badge. It means the checker hasn't run against this entry,
+ * which is not information the reader can act on, and badging it would put a warning on 127
+ * of 493 rows for no gain.
+ */
+const LINK_WARNINGS: Record<string, { label: string; title: string }> = {
+  broken: {
+    label: 'link may be dead',
+    title:
+      "Our last check couldn't reach this page. It may have moved or the broker may be gone. " +
+      'If you find a working URL, that correction is worth reporting.',
+  },
+  'bot-blocked': {
+    label: 'blocks automated checks',
+    title:
+      "This broker blocks our automated link checker, so we can't confirm the page from here. " +
+      'It usually still works in a normal browser — you may hit a CAPTCHA.',
+  },
+  redirect: {
+    label: 'redirects',
+    title:
+      'This URL redirects somewhere else. It usually still lands on a working opt-out page, ' +
+      'but tell us if it sends you somewhere unexpected.',
+  },
+};
+
+export function badgeDecisionFor(
+  broker: Pick<Broker, 'last_verified' | 'priority'> & Partial<Pick<Broker, 'link_status'>>,
+): BadgeDecision {
+  const warning = broker.link_status ? LINK_WARNINGS[broker.link_status] : undefined;
   return {
     // The one non-negotiable contract: last_verified === null MUST show the unverified badge.
     // A CI check can construct a synthetic broker with last_verified: null and assert this is
     // true, catching a future edit that accidentally drops the branch in RowShell.svelte.
     showUnverifiedBadge: broker.last_verified === null,
     priorityBadgeClass: `priority-${broker.priority}`,
+    linkWarning: warning?.label ?? null,
+    linkWarningTitle: warning?.title ?? null,
   };
 }
 
