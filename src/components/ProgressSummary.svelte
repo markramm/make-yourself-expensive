@@ -52,6 +52,8 @@
     font-size: 0.9rem;
     color: var(--graphite);
     margin: 0 0 1rem;
+    /* See .coverage-note in BrokerList.svelte -- small type in a 42rem container runs long. */
+    max-width: 34rem;
   }
   .dataset-honesty a {
     color: var(--seal);

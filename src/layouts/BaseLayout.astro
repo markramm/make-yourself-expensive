@@ -91,6 +91,11 @@ const CSP = [
     </script>
   </head>
   <body>
+    <!-- First focusable element on every page. The nav plus the alpha banner occupy ~167px
+         before content on a phone, and /brokers renders 493 rows -- without this, reaching the
+         list by keyboard means tabbing the whole nav on every single page load. Visually hidden
+         until focused, then it appears. -->
+    <a class="skip-link" href="#main">Skip to main content</a>
     <nav class="site-nav">
       <a href="/" class="brand">
         <span class="brand-full">Make Yourself Expensive</span>
@@ -107,11 +112,13 @@ const CSP = [
          -> Harden -> Resources) and a permanent "Testing" entry would read as clutter to the
          general audience this is for. A banner tells every visitor the true thing -- this is
          unfinished -- and routes the willing to /testing. Delete this block when alpha ends. -->
+    <!-- Kept to one line on a phone: the previous wording wrapped to two and cost 80px of the
+         first screen. Same promise, fewer words. -->
     <aside class="alpha-banner">
-      <strong>Alpha.</strong> This works but isn't finished — some broker instructions are
-      unverified. <a href="/testing">How to test it, and how to report what you find →</a>
+      <strong>Alpha.</strong> Some broker instructions are unverified.
+      <a href="/testing">How to test it and report what you find</a>
     </aside>
-    <main>
+    <main id="main" tabindex="-1">
       <slot />
     </main>
     <footer class="site-footer">
@@ -137,6 +144,16 @@ const CSP = [
       --paper: #16130e;
       --ink: #ede9e0;
       --rule: #443f36;
+      /* --seal and --graphite MUST be redefined here, not inherited from the light block.
+         The light values are chosen against #ede9e0 paper; against dark paper they collapse:
+         #8a1c1c scored 2.0:1 and #6b6459 scored 3.17:1 (measured), so every body link, the
+         UNVERIFIED badge, and -- because :focus-visible draws its outline in --seal -- the
+         keyboard focus ring were all below WCAG AA. Dark mode is the default on most
+         machines, so this was the common case, not the edge case.
+         These two are the same hues lightened until they clear AA (4.5:1 for text) and the
+         3:1 non-text minimum for the focus ring. */
+      --seal: #e8836a;
+      --graphite: #a89f92;
     }
   }
   * {
@@ -145,6 +162,32 @@ const CSP = [
   :focus-visible {
     outline: 2px solid var(--seal);
     outline-offset: 2px;
+  }
+  .skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: -4rem;
+    z-index: 200;
+    background: var(--paper);
+    color: var(--seal);
+    border: 1px solid var(--seal);
+    border-radius: 3px;
+    padding: 0.6rem 0.9rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    /* Off-screen rather than display:none -- it has to stay focusable to be reachable. */
+    transition: top 0.15s ease;
+  }
+  .skip-link:focus {
+    top: 0.5rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skip-link {
+      transition: none;
+    }
+  }
+  main:focus {
+    outline: none;
   }
   body {
     margin: 0;
@@ -184,9 +227,18 @@ const CSP = [
     border-bottom: 1px solid var(--rule);
     font-family: 'Courier New', monospace;
   }
+  /* Nav links carried a 22px touch height (the brand 24px) against a 44px mobile-accessibility
+     floor -- the site's spine was the hardest thing on the page to hit with a thumb. Grow the
+     hit area with padding and pull it back with negative margin, so the tap target changes and
+     the visual rhythm of the bar does not. Same technique as .check-target in RowShell.svelte. */
   .site-nav a {
     color: var(--ink);
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 0.15rem;
+    margin: -0.6rem 0;
   }
   .site-nav .brand {
     font-weight: bold;

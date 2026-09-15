@@ -24,7 +24,7 @@ without ever storing a persistent identifier. No cookies are set.
   Plausible's script sends on its own.
 - **Anything that could reconstruct which specific brokers or hardening steps a visitor
   looked at.** A page view on `/brokers/` says someone visited the broker list. It says
-  nothing about which of the 165 rows they read, expanded, or checked off.
+  nothing about which of the 493 rows they read, expanded, or checked off.
 
 ## Where it's wired in
 

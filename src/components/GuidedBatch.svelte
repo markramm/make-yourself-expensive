@@ -49,6 +49,29 @@
     }
   }
 
+  // What kind of work this batch actually is, in the same words the full list's tier headings
+  // use. Batches are built by value x ease (lib/batching/nextBatch.ts), so an early batch is
+  // usually all one tier -- naming it is the difference between "seven identical buttons" and
+  // "seven emails to send."
+  // Matches the full list's tier names (see BrokerList.svelte) -- "guided" is deliberately not
+  // used as a tier word anywhere now, since it names this page.
+  const TIER_LABELS: Record<Broker['tier'], string> = {
+    auto: 'one-click email',
+    assisted: 'a form to fill in',
+    guided: 'manual, step-by-step',
+  };
+
+  $: batchKindSummary = currentBatch
+    ? (() => {
+        const counts = new Map<Broker['tier'], number>();
+        for (const b of currentBatch.items) counts.set(b.tier, (counts.get(b.tier) ?? 0) + 1);
+        const parts = (['auto', 'assisted', 'guided'] as const)
+          .filter((t) => counts.has(t))
+          .map((t) => `${counts.get(t)} × ${TIER_LABELS[t]}`);
+        return parts.join(' · ');
+      })()
+    : '';
+
   $: batchDoneCount = currentBatch
     ? currentBatch.items.filter((b) => isDone($progressStore, b.id)).length
     : 0;
@@ -106,12 +129,13 @@
       <span class="progress-label">This batch</span>
       <span class="progress-count">{batchDoneCount}/{currentBatch.items.length}</span>
     </div>
+    <!-- The full list groups rows under a tier heading ("One-click (email)"), which tells the
+         reader what KIND of work is in front of them. The guided view dropped that, so a batch
+         of email-only brokers looked like an unexplained wall of identical buttons. -->
+    <p class="batch-kinds">{batchKindSummary}</p>
     <div class="progress-bar" role="progressbar" aria-valuenow={batchDoneCount} aria-valuemin={0} aria-valuemax={currentBatch.items.length}>
       <div class="progress-fill" style="width: {(batchDoneCount / currentBatch.items.length) * 100}%"></div>
     </div>
-    {#if currentBatch.remainingAfterBatch > 0}
-      <p class="remaining-note">{currentBatch.remainingAfterBatch} more after this one.</p>
-    {/if}
   </div>
 
   {#each currentBatch.items as broker (broker.id)}
@@ -122,6 +146,13 @@
       onToggle={() => progressStore.toggle(broker.id)}
     />
   {/each}
+
+  <!-- Moved below the batch. At the top, the first concrete number a new arrival read was
+       "486 more after this one" -- the size of the backlog, before they had done anything.
+       After the rows it answers "what happens when I finish these?" instead. -->
+  {#if currentBatch.remainingAfterBatch > 0}
+    <p class="remaining-note">{currentBatch.remainingAfterBatch} more after this one.</p>
+  {/if}
 {/if}
 
 <style>
@@ -197,5 +228,11 @@
     font-size: 0.8rem;
     color: var(--graphite);
     margin: 0.5rem 0 0;
+  }
+  .batch-kinds {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--graphite);
+    margin: 0 0 0.5rem;
   }
 </style>

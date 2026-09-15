@@ -98,6 +98,12 @@
     font-size: 0.9rem;
     line-height: 1.5;
     max-width: 34rem;
+    /* Instruction text carries bare opt-out URLs -- OneTrust request-portal links run to 170+
+       characters with no spaces or hyphens to break at. Without this, one of those tokens sets
+       the row's minimum width and the whole page scrolls sideways on a phone (515px of scroll
+       at a 390px viewport, measured). `anywhere` rather than `break-word` so the long token is
+       allowed to influence min-content width as little as possible. */
+    overflow-wrap: anywhere;
     background: color-mix(in srgb, var(--rule, #c9c1b2) 25%, transparent);
     border-radius: 4px;
     padding: 0.6rem 0.75rem;

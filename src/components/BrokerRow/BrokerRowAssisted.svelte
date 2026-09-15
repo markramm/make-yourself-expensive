@@ -38,14 +38,29 @@
   }
 
   let copiedField: string | null = null;
+  let failedField: string | null = null;
 
   async function copy(field: string) {
     const value = profileValueFor(field);
     if (!value) return;
-    await navigator.clipboard.writeText(value);
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      // Clipboard access can be refused outright (permission denied, insecure context, or a
+      // document that isn't focused). Without this the promise rejects unhandled and the
+      // button just looks inert -- and unlike the auto-tier row, the value here is the
+      // reader's own profile data, which is NOT rendered anywhere on screen to fall back to.
+      // So say plainly that it didn't copy and point at the profile page.
+      failedField = field;
+      setTimeout(() => {
+        if (failedField === field) failedField = null;
+      }, 3000);
+      return;
+    }
     copiedField = field;
     // Deliberately no analytics event here, even a field-name-only one -- which fields a
-    // user copies is itself PII-shaped information.
+    // user copies is itself PII-shaped information. The failure path above is equally silent
+    // for the same reason.
     setTimeout(() => {
       if (copiedField === field) copiedField = null;
     }, 1500);
@@ -58,9 +73,22 @@
   {#if pastableFields.length > 0}
     <div class="fields" role="group" aria-label="Fields to paste into the form">
       {#each pastableFields as field}
-        <button class="field-btn" on:click={() => copy(field)} disabled={!profileValueFor(field)}>
+        <button
+          class="field-btn"
+          class:copy-failed={failedField === field}
+          on:click={() => copy(field)}
+          disabled={!profileValueFor(field)}
+        >
           {FIELD_LABELS[field] ?? field}
-          <span aria-live="polite">{copiedField === field ? ' — copied' : ' — copy'}</span>
+          <span aria-live="polite">
+            {#if failedField === field}
+              — couldn't copy, open your profile to select it
+            {:else if copiedField === field}
+              — copied
+            {:else}
+              — copy
+            {/if}
+          </span>
         </button>
       {/each}
     </div>
@@ -91,5 +119,9 @@
   .field-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+  }
+  .field-btn.copy-failed {
+    border-color: var(--seal, #8a1c1c);
+    color: var(--seal, #8a1c1c);
   }
 </style>

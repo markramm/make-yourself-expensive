@@ -4,20 +4,29 @@
   import { loadDataset } from '../lib/dataset/useDataset';
   import { profileStore } from '../stores/profile';
   import { progressStore, isDone } from '../stores/progress';
+  import { profileIsEmpty } from '../lib/profile/isEmpty';
   import BrokerRow from './BrokerRow/BrokerRow.svelte';
 
+  // "Guided" previously named BOTH this difficulty tier and the batch flow at /brokers/guide/,
+  // so someone who clicked "Work through them a few at a time" and landed on "Guided opt-out"
+  // could reasonably expect the 270 guided-tier brokers. The tier is renamed rather than the
+  // route: /brokers/guide/ is already linked from the homepage, the harden index and the
+  // published field guide, and breaking those is a worse cost than a label change.
   const TIER_LABELS: Record<Broker['tier'], string> = {
     auto: 'One-click (email)',
     assisted: 'Assisted (forms)',
-    guided: 'Guided (takes longer)',
+    guided: 'Manual (takes longer)',
   };
 
   let brokers: Broker[] = [];
   let meta: DatasetMeta | null = null;
-  // null = not yet loaded / fetch failed (see useDataset.ts's DatasetLoadState) -- the
-  // {#if loadError} branch always renders first when null, so the mismatch banner below never
-  // shows for a failed fetch, only for a confirmed hash mismatch.
-  let verified: boolean | null = true;
+  // null = not yet loaded / fetch failed (see useDataset.ts's DatasetLoadState). Starts null
+  // rather than true: the dataset hasn't been checked yet on first render, and claiming
+  // "verified" before the hash is computed is exactly the assurance this tool must not give
+  // on faith. The banner below tests `verified === false` explicitly so that this in-between
+  // state shows no banner either way -- an unverified-yet dataset is not a mismatch, and a
+  // failed fetch renders the loadError branch first regardless.
+  let verified: boolean | null = null;
   let integrityWarning: { expectedHash: string; actualHash: string } | undefined;
   let loadError: string | null = null;
   let search = '';
@@ -45,16 +54,24 @@
     const done = list.filter((b) => isDone(progress, b.id)).length;
     return { done, total: list.length };
   }
+
+  // Drives the "your profile is empty, that's why these are greyed out" hint below. The
+  // predicate lives in lib/profile/isEmpty.ts so it can be unit-tested directly -- see that
+  // file for why dob doesn't count toward a profile being non-empty.
+  $: isProfileEmpty = profileIsEmpty($profileStore);
 </script>
 
 {#if loadError}
   <p class="error">Couldn't load the broker list: {loadError}</p>
-{:else if !verified}
+{:else if verified === false}
   <div class="integrity-banner" role="alert">
     This dataset doesn't match the version this build expects. Opt-out links have not been
     re-verified against the pinned release — proceed with normal caution, or check the
-    <a href="https://github.com/" target="_blank" rel="noopener noreferrer">releases page</a> for
-    the current signed release.
+    <a
+      href="https://github.com/markramm/data-broker-registry/releases"
+      target="_blank"
+      rel="noopener noreferrer">releases page</a
+    > for the current signed release.
   </div>
 {/if}
 
@@ -73,12 +90,20 @@
   </p>
 </div>
 
-<div class="harden-callout">
-  <p>
-    Opting out cleans up data already collected. <a href="/harden/">Hardening your devices</a>
-    slows down what gets collected next.
+<!--
+  With no profile filled in, every "copy" button in the assisted rows renders disabled -- 346
+  of them on the current dataset. The homepage explains that profile-less rows come up blank,
+  but by the time someone is looking at the list, that sentence is two pages behind them, and
+  a wall of greyed-out buttons reads as broken rather than as "not set up yet." Say it once,
+  here, where the disabled buttons actually are.
+-->
+{#if isProfileEmpty}
+  <p class="profile-hint">
+    The copy buttons below fill from your profile, which is empty — so they're greyed out.
+    <a href="/profile">Fill in your profile</a> to switch them on, or work the email-only brokers
+    in “One-click (email)” below, which don't need it.
   </p>
-</div>
+{/if}
 
 <input class="search" type="search" placeholder="Search brokers…" bind:value={search} />
 
@@ -106,6 +131,16 @@
     ({meta.backlog_count} more tracked, not yet researched).
   </p>
 {/if}
+
+<!-- Moved down from above the list. As the second of two stacked callouts it was advertising a
+     different section of the site before the reader had engaged with this one; at the end it
+     reads as a next step instead of an interruption. -->
+<div class="harden-callout">
+  <p>
+    Opting out cleans up data already collected. <a href="/harden/">Hardening your devices</a>
+    slows down what gets collected next.
+  </p>
+</div>
 
 <style>
   .error {
@@ -150,8 +185,19 @@
     border: 1px solid var(--rule);
     border-radius: 4px;
     padding: 0.75rem 1rem;
-    margin-bottom: 1.5rem;
+    margin-top: 1.5rem;
     font-size: 0.9rem;
+  }
+  .profile-hint {
+    font-size: 0.9rem;
+    color: var(--graphite);
+    max-width: 34rem;
+    margin: 0 0 1.5rem;
+    line-height: 1.5;
+  }
+  .profile-hint a {
+    color: var(--seal);
+    font-weight: 600;
   }
   .harden-callout p {
     margin: 0;
@@ -188,5 +234,9 @@
     font-size: 0.8rem;
     color: var(--graphite);
     margin-top: 2rem;
+    /* Shrinking the font inside a fixed-width container pushes the measure out past the
+       comfortable reading range. The cap is in `ch` rather than `rem` so it tracks this
+       block's own smaller font size -- a 34rem cap still measured ~85 characters here. */
+    max-width: 68ch;
   }
 </style>
