@@ -45,18 +45,31 @@ import ProgressSummary from '../components/ProgressSummary.svelte';
 
   <h2>Getting started</h2>
   <p>
-    Set up your profile first — it's optional, stays on this device, and is only used to
-    pre-fill the opt-out emails and forms you send yourself (plus pick the right legal
-    citation for your state). You can skip it, but broker rows that compose an email or have
-    fields to copy will be blank until you fill it in.
+    <strong>Start with a handful, not the whole list.</strong> There are hundreds of brokers,
+    and working through them in order of what actually matters — a few per sitting — is the
+    difference between finishing and bouncing off. That's what the guided flow does: it picks
+    the next batch for you, easiest and highest-value first.
   </p>
   <p>
-    <a href="/profile">Set up your profile →</a> &nbsp;·&nbsp;
-    <a href="/brokers">Skip to the broker list →</a>
+    Setting up a profile first is optional. It stays on this device and only pre-fills the
+    opt-out emails and forms you send yourself, plus picks the right legal citation for your
+    state. You can skip it, though rows that compose an email or have fields to copy will be
+    blank until you fill it in.
+  </p>
+  <p>
+    <a href="/brokers/guide/">Start opting out →</a> &nbsp;·&nbsp;
+    <a href="/profile">Set up your profile first →</a>
+  </p>
+  <p class="secondary-link">
+    Looking for a specific broker? <a href="/brokers">Browse the full list →</a>
   </p>
 </BaseLayout>
 
 <style>
+  .secondary-link {
+    font-size: 0.9rem;
+    color: var(--graphite);
+  }
   .build-info {
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;

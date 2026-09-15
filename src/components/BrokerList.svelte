@@ -83,10 +83,16 @@
   </div>
 {/if}
 
+<!-- This page is now the SECONDARY path: the nav and homepage lead to /brokers/guide/, which
+     picks a sensible batch instead of presenting all of them at once. People still come here
+     deliberately -- to search for one broker, or to revisit something already done -- so the
+     callout no longer sells the guided flow as an escape hatch from a wall of rows. It says
+     what this page is for, and offers the way back. -->
 <div class="guide-callout">
   <p>
-    {meta?.authored_count ?? 'This many'} brokers is a lot to look at once. <a href="/brokers/guide/">Work
-    through them a few at a time</a> instead — sensible order, one sitting at a time.
+    Every broker we've researched, all {meta?.authored_count ?? ''} of them — useful for
+    finding a specific one or revisiting something you've done.
+    <a href="/brokers/guide/">Work through them a few at a time instead →</a>
   </p>
 </div>
 

@@ -101,9 +101,16 @@ const CSP = [
         <span class="brand-full">Make Yourself Expensive</span>
         <span class="brand-short">MYE</span>
       </a>
+      <!-- Opt-Out points at the guided flow, not the full 493-row list. The batching in
+           lib/batching/nextBatch.ts orders by value x ease, so the first four batches a new
+           reader meets are verified, live-link, crucial entries -- the best first sitting the
+           data can offer. Nothing routed anyone there: the nav and both homepage links went to
+           the full list, and the guided flow was reachable only via a callout partway down it.
+           The full list stays one click away from both /brokers/guide/ and the footer, for
+           anyone who wants to search or revisit a specific broker. -->
       <div class="nav-links">
         <a href="/profile">Profile</a>
-        <a href="/brokers">Opt-Out</a>
+        <a href="/brokers/guide/">Opt-Out</a>
         <a href="/harden/">Harden</a>
         <a href="/resources">Resources</a>
       </div>
@@ -122,6 +129,8 @@ const CSP = [
       <slot />
     </main>
     <footer class="site-footer">
+      <a href="/brokers">Full broker list</a>
+      <span aria-hidden="true">·</span>
       <a href="/testing">Testing &amp; feedback</a>
       <span aria-hidden="true">·</span>
       <a href="https://github.com/markramm/make-yourself-expensive">Source</a>
