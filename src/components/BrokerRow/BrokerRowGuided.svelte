@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Broker } from '../../lib/dataset/fetchAndVerify';
+  import { routeReportUrl } from '../../lib/reportLink';
 
   export let broker: Broker;
 
@@ -59,16 +60,34 @@
   {/if}
 
   {#if hasNoRoute}
-    <p class="no-route">
-      {#if broker.route_unconfirmed}
-        We don't have a confirmed opt-out link for this broker yet — the steps below are what we
-        know, and you'll need to find the form on their own site. If you locate the real opt-out
-        page, that correction is worth reporting.
-      {:else}
-        This broker publishes no opt-out link, email, or phone number — the steps below are the
-        whole route.
+    <div class="no-route">
+      <p class="no-route-lead">
+        {#if broker.route_unconfirmed}
+          We could not confirm where this broker's opt-out lives. The steps below are our best
+          current understanding, and they may be incomplete.
+        {:else}
+          This broker publishes no opt-out link, email, or phone number. The steps below are the
+          whole route.
+        {/if}
+      </p>
+      <!-- Most of these rows are bot-blocked or CAPTCHA-gated, and their own instructions say
+           so. The previous copy told the reader to "find the form on their own site", which set
+           them up to bounce off a challenge page and conclude the tool was wrong. Warn once,
+           here, so the friction is expected rather than surprising. -->
+      {#if broker.captcha || broker.link_status === 'bot-blocked'}
+        <p class="no-route-note">
+          This site blocks automated checks, so expect a CAPTCHA or a verification step before
+          you can get anywhere.
+        </p>
       {/if}
-    </p>
+      <p class="no-route-ask">
+        <strong>If you find the real opt-out page, that is the single most useful correction
+        this project can get.</strong>
+        <a href={routeReportUrl(broker)} target="_blank" rel="noopener noreferrer">
+          Tell us where it lives →
+        </a>
+      </p>
+    </div>
   {/if}
 
   <button
@@ -118,6 +137,21 @@
     color: var(--graphite, #6b6459);
     border-left: 2px solid var(--seal, #8a1c1c);
     padding-left: 0.6rem;
+  }
+  .no-route p {
+    margin: 0 0 0.4rem;
+  }
+  .no-route p:last-child {
+    margin-bottom: 0;
+  }
+  .no-route-ask strong {
+    color: var(--ink, #16130e);
+    font-weight: 600;
+  }
+  .no-route-ask a {
+    color: var(--seal, #8a1c1c);
+    font-weight: 600;
+    white-space: nowrap;
   }
   .toggle {
     font-size: 0.85rem;
