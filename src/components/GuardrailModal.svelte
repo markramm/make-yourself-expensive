@@ -17,7 +17,24 @@
 
   let titleEl: HTMLHeadingElement;
   let modalEl: HTMLDivElement;
-  onMount(() => titleEl?.focus());
+
+  // Whatever had focus when this modal opened -- captured before we move focus into the
+  // dialog, so it can be handed back on close. Without this, dismissing the modal drops focus
+  // to the top of the document and a keyboard user has to tab back through the whole page to
+  // reach the row they were on. The trigger is the "Continue (sensitive info required)" button
+  // in BrokerRow, which stays in the DOM while the modal is open.
+  let previouslyFocused: HTMLElement | null = null;
+
+  onMount(() => {
+    previouslyFocused = document.activeElement as HTMLElement | null;
+    titleEl?.focus();
+    return () => {
+      // Guard isConnected: the trigger can be gone by the time we unmount (the row
+      // re-rendered, or confirming replaced the button with the tier-specific action), and
+      // focusing a detached node silently does nothing while looking like it worked.
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+    };
+  });
 
   function focusableElements(): HTMLElement[] {
     if (!modalEl) return [];
@@ -41,10 +58,25 @@
     if (focusable.length === 0) return;
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
+    const active = document.activeElement as HTMLElement | null;
+
+    // Focus opens on the HEADING, which is tabindex="-1" and so deliberately absent from
+    // focusableElements(). The previous version only wrapped when focus was already on the
+    // first or last control, so Shift+Tab from that opening position matched neither branch
+    // and walked straight out into the page behind the modal -- past the backdrop, into a
+    // dialog the reader believes is blocking them. Anything inside the dialog that is not a
+    // listed control (the heading, the modal container) has to wrap too.
+    const insideTrap = active !== null && focusable.includes(active);
+    if (!insideTrap) {
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus();
+      return;
+    }
+
+    if (e.shiftKey && active === first) {
       e.preventDefault();
       last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
+    } else if (!e.shiftKey && active === last) {
       e.preventDefault();
       first.focus();
     }
