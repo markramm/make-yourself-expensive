@@ -34,6 +34,14 @@ export interface Broker {
   source: string;
   notes?: string;
   instructions_md: string;
+  /**
+   * Set by normalizeBroker() when `opt_out_url` arrived as a `<verify:>` placeholder and was
+   * nulled. Not a field the registry publishes -- it carries the fact that the URL is absent
+   * BECAUSE it is unconfirmed, which a bare null cannot express. Absent on ordinary entries.
+   */
+  route_unconfirmed?: boolean;
+  /** Same, for `opt_out_email`. 2 of 493 entries currently arrive this way. */
+  opt_out_email_unconfirmed?: boolean;
 }
 
 export interface DatasetMeta {
@@ -107,6 +115,51 @@ async function sha256Hex(text: string): Promise<string> {
     .join('');
 }
 
+/**
+ * The registry marks a field it could not confirm with an angle-bracket placeholder --
+ * `<verify: what still needs checking>` -- rather than guessing a value or leaving it blank
+ * (see the registry repo's CONTRIBUTING.md). Those placeholders are prose, not values: a
+ * placeholder `opt_out_url` rendered as an href sends the reader to this site's own 404, and
+ * because it is a non-empty string it also reads as truthy everywhere a component asks
+ * "is there a URL?" -- which is how 7 phone-only rows lost their phone number.
+ *
+ * Normalizing them to null at this boundary fixes every consumer at once, and is strictly
+ * safer than patching each call site: a future component that does `if (broker.opt_out_url)`
+ * is then correct by default rather than newly broken.
+ *
+ * Nulling alone would lose WHY the field is empty, which the row still needs to say -- "nobody
+ * has confirmed where this opt-out lives" is a different message from "this broker publishes
+ * no URL at all". normalizeBroker() therefore records the fact as a flag alongside the null,
+ * and that flag is what the badge and the row read.
+ *
+ * Exported as the single definition of the marker: anything that needs to recognise a
+ * placeholder should call this rather than re-spelling the prefix, so the two cannot drift.
+ */
+export function isUnconfirmedPlaceholder(value: string | null | undefined): boolean {
+  return typeof value === 'string' && value.startsWith('<verify:');
+}
+
+/**
+ * Replaces unconfirmed-placeholder strings with null, and records on the entry that the
+ * placeholder was there, so the badge layer keeps the information the null throws away.
+ *
+ * Runs AFTER the hash is computed, never before: the integrity check must hash exactly the
+ * bytes the registry published, or the pin would only ever match a dataset we had already
+ * rewritten -- which would verify our own edit rather than the registry's release.
+ */
+function normalizeBroker(broker: Broker): Broker {
+  const urlUnconfirmed = isUnconfirmedPlaceholder(broker.opt_out_url);
+  const emailUnconfirmed = isUnconfirmedPlaceholder(broker.opt_out_email);
+  if (!urlUnconfirmed && !emailUnconfirmed) return broker;
+  return {
+    ...broker,
+    opt_out_url: urlUnconfirmed ? null : broker.opt_out_url,
+    opt_out_email: emailUnconfirmed ? null : broker.opt_out_email,
+    route_unconfirmed: urlUnconfirmed,
+    opt_out_email_unconfirmed: emailUnconfirmed,
+  };
+}
+
 export async function fetchAndVerifyDataset(datasetUrl: string): Promise<DatasetResult> {
   const res = await fetch(datasetUrl);
   if (!res.ok) {
@@ -119,7 +172,7 @@ export async function fetchAndVerifyDataset(datasetUrl: string): Promise<Dataset
 
   return {
     meta: data._meta,
-    brokers: data.brokers,
+    brokers: data.brokers.map(normalizeBroker),
     verified,
     ...(verified
       ? {}

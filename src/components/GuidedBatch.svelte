@@ -184,7 +184,7 @@
     margin: 0.5rem auto 1.5rem;
   }
   .continue-btn {
-    background: var(--seal);
+    background: var(--seal-surface);
     color: white;
     border: none;
     padding: 0.6rem 1.2rem;
@@ -216,7 +216,7 @@
   }
   .progress-fill {
     height: 100%;
-    background: var(--seal);
+    background: var(--seal-surface);
     border-radius: 999px;
   }
   @media (prefers-reduced-motion: no-preference) {

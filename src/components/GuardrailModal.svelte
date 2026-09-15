@@ -125,7 +125,7 @@
     margin-top: 1rem;
   }
   .confirm {
-    background: var(--seal, #8a1c1c);
+    background: var(--seal-surface, #8a1c1c);
     color: white;
     border: none;
     padding: 0.5rem 1rem;

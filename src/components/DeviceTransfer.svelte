@@ -160,12 +160,34 @@
       if (incomingHarden) hardenProgressStore.merge(incomingHarden);
     }
 
-    profileStore.replaceAll(incomingProfile);
+    // The profile follows the same merge/replace choice as progress. It used to be replaced
+    // unconditionally, which quietly contradicted the radio the reader had just chosen:
+    // someone who filled in their profile here and then loaded an older backup to recover
+    // progress lost the profile they had just typed, with no warning and no undo. On "merge",
+    // fill only the fields that are empty here and keep everything already entered.
+    if (mergeChoice === 'replace') {
+      profileStore.replaceAll(incomingProfile);
+    } else {
+      profileStore.update((current) => mergeProfileFields(current, incomingProfile));
+    }
 
     pendingEnvelope = null;
     pendingPayload = null;
     loadPassphrase = '';
     if (fileInput) fileInput.value = '';
+  }
+
+  /**
+   * Field-by-field profile merge: a value already present on this device always wins, and the
+   * incoming backup only fills blanks. Never blanks a field the reader can see -- an empty
+   * string in the backup is absence, not an instruction to clear.
+   */
+  function mergeProfileFields(current: Profile, incoming: Profile): Profile {
+    const merged = { ...current };
+    for (const key of Object.keys(incoming) as (keyof Profile)[]) {
+      if (!merged[key] && incoming[key]) merged[key] = incoming[key];
+    }
+    return merged;
   }
 
   function cancelImport() {
@@ -250,11 +272,12 @@
         <legend>What should happen?</legend>
         <label>
           <input type="radio" bind:group={mergeChoice} value="merge" />
-          Combine both — anything done in either place stays done
+          Combine both — anything done in either place stays done, and your profile here is
+          kept (the file only fills in blanks)
         </label>
         <label>
           <input type="radio" bind:group={mergeChoice} value="replace" />
-          Replace what's here with the file's progress
+          Replace what's here with the file's progress and profile
         </label>
       </fieldset>
       <div class="import-actions">
@@ -316,7 +339,7 @@
   }
   .save-btn,
   .apply-btn {
-    background: var(--seal, #8a1c1c);
+    background: var(--seal-surface, #8a1c1c);
     color: white;
     border: none;
     padding: 0.55rem 1.1rem;

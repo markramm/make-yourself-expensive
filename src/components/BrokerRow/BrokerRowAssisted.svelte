@@ -67,9 +67,35 @@
   }
 
   $: pastableFields = broker.required_fields.filter((f) => f !== 'ssn' && f !== 'gov_id' && f !== 'vin');
+
+  // An assisted row's whole premise is "open their form, paste these fields in." When the
+  // opt-out URL was an unconfirmed `<verify:>` placeholder, nulled at the dataset boundary,
+  // there is no form to open -- so the copy buttons point nowhere and the row silently asks
+  // the reader to paste into a page we never gave them. Say what is missing, and surface the
+  // written steps, which are the only route left. One shipped entry is in this state today.
+  $: hasNoRoute = !broker.opt_out_url && !broker.opt_out_email && !broker.phone;
 </script>
 
 <div class="assisted-action">
+  {#if hasNoRoute}
+    <p class="no-route">
+      {#if broker.route_unconfirmed}
+        We don't have a confirmed opt-out link for this broker yet. You'll need to find the form
+        on their own site first — these fields are what it will ask for. If you locate the real
+        opt-out page, that correction is worth reporting.
+      {:else}
+        This broker publishes no opt-out link, email, or phone number. You'll need to find the
+        form on their own site — these fields are what it will ask for.
+      {/if}
+    </p>
+    {#if broker.instructions_md?.trim()}
+      <details class="steps">
+        <summary>What we know about their process</summary>
+        <p class="steps-body">{broker.instructions_md}</p>
+      </details>
+    {/if}
+  {/if}
+
   {#if pastableFields.length > 0}
     <div class="fields" role="group" aria-label="Fields to paste into the form">
       {#each pastableFields as field}
@@ -119,6 +145,30 @@
   .field-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+  }
+  .no-route {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    max-width: 34rem;
+    margin: 0;
+    color: var(--graphite, #6b6459);
+    border-left: 2px solid var(--seal, #8a1c1c);
+    padding-left: 0.6rem;
+  }
+  .steps {
+    font-size: 0.85rem;
+    max-width: 34rem;
+  }
+  .steps summary {
+    cursor: pointer;
+    color: var(--graphite, #6b6459);
+  }
+  .steps-body {
+    /* Instruction text carries bare opt-out URLs that run long with nothing to break at --
+       same overflow risk the guided tier handles. */
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+    line-height: 1.5;
   }
   .field-btn.copy-failed {
     border-color: var(--seal, #8a1c1c);

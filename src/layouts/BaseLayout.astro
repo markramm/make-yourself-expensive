@@ -138,6 +138,12 @@ const CSP = [
     --seal: #8a1c1c;
     --graphite: #6b6459;
     --rule: #c9c1b2;
+    /* Filled-surface variants: the colour drawn BEHIND white text (priority badges, primary
+       buttons, the integrity banner), as distinct from --seal/--graphite, which are text
+       colours drawn ON paper. In light mode the two coincide; in dark mode they must not --
+       see the dark block for the measurements. */
+    --seal-surface: #8a1c1c;
+    --graphite-surface: #6b6459;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -154,6 +160,17 @@ const CSP = [
          3:1 non-text minimum for the focus ring. */
       --seal: #e8836a;
       --graphite: #a89f92;
+      /* The filled-surface variants deliberately DO NOT track --seal/--graphite here. Those
+         two are lightened so they clear AA as TEXT on dark paper, but that same lightening
+         destroys the contrast of the white text sitting ON them: white measured 2.66:1 on
+         #e8836a and 2.61:1 on #a89f92, both under the 4.5:1 floor, across the crucial/high
+         priority badges, the integrity banner, the level-up and save/apply buttons, and the
+         guardrail confirm. Dark mode is the default on most machines, so this was the common
+         case. These values clear AA for the white text (5.50:1 and 5.67:1) while still
+         standing off the dark paper (3.37:1 and 3.27:1) so a filled badge stays visible as a
+         shape -- a surface tuned only for its text can sink into the background instead. */
+      --seal-surface: #b44434;
+      --graphite-surface: #6c665f;
     }
   }
   * {

@@ -147,7 +147,7 @@
     color: var(--seal);
   }
   .integrity-banner {
-    background: var(--seal);
+    background: var(--seal-surface);
     color: white;
     padding: 0.75rem 1rem;
     border-radius: 4px;
