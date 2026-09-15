@@ -1,6 +1,76 @@
 import { describe, it, expect } from 'vitest';
 import { badgeDecisionFor, isRecheckDue } from '../badgeContract';
 
+describe('badgeDecisionFor: unconfirmed-routing contract', () => {
+  // The dataset marks a field it could not confirm with `<verify: ...>` rather than guessing
+  // (registry CONTRIBUTING.md). 40 of 493 entries carry one on opt_out_url, and without this
+  // branch they compile to link_status 'unknown' and render no badge at all -- so a reader
+  // sees nothing distinguishing "nobody knows where this opt-out lives" from a normal row.
+  it('badges a broker whose opt_out_url is a <verify:> placeholder', () => {
+    const decision = badgeDecisionFor({
+      last_verified: null,
+      priority: 'crucial',
+      link_status: 'unknown',
+      opt_out_url: '<verify: parked domain, needs a confirmed consumer-rights URL>',
+    });
+    expect(decision.linkWarning).toBe('routing unconfirmed');
+    expect(decision.linkWarningTitle).toContain('may route you somewhere that cannot process');
+  });
+
+  it('still badges nothing for an ordinary unknown link with a real URL', () => {
+    // The 128 merely-unchecked rows must stay unbadged; that is what keeps this signal rare
+    // enough to mean something.
+    const decision = badgeDecisionFor({
+      last_verified: null,
+      priority: 'high',
+      link_status: 'unknown',
+      opt_out_url: 'https://example.test/opt-out',
+    });
+    expect(decision.linkWarning).toBeNull();
+  });
+
+  it('lets an unconfirmed route outrank a link-state warning', () => {
+    // No point saying "this URL redirects" when we are not sure it is the right URL at all.
+    const decision = badgeDecisionFor({
+      last_verified: null,
+      priority: 'crucial',
+      link_status: 'redirect',
+      opt_out_url: '<verify: unconfirmed>',
+    });
+    expect(decision.linkWarning).toBe('routing unconfirmed');
+  });
+
+  it('leaves link-state warnings alone when the URL is real', () => {
+    const decision = badgeDecisionFor({
+      last_verified: null,
+      priority: 'crucial',
+      link_status: 'broken',
+      opt_out_url: 'https://example.test/gone',
+    });
+    expect(decision.linkWarning).toBe('link may be dead');
+  });
+
+  it('does not badge a null or absent opt_out_url as unconfirmed', () => {
+    // Email-only brokers legitimately have no opt_out_url; that is not an unconfirmed route.
+    expect(
+      badgeDecisionFor({ last_verified: null, priority: 'crucial', opt_out_url: null }).linkWarning,
+    ).toBeNull();
+    expect(badgeDecisionFor({ last_verified: null, priority: 'crucial' }).linkWarning).toBeNull();
+  });
+
+  it('does not treat a URL merely containing "<verify:" mid-string as a placeholder', () => {
+    // The marker is an anchored prefix, so a query string that happens to embed the text
+    // does not flip a real URL into an unconfirmed one.
+    const decision = badgeDecisionFor({
+      last_verified: null,
+      priority: 'standard',
+      link_status: 'live',
+      opt_out_url: 'https://example.test/x?note=<verify:%20nope>',
+    });
+    expect(decision.linkWarning).toBeNull();
+  });
+});
+
 // This is the render-contract check from the trust/licensing plan: a synthetic entry with
 // last_verified: null MUST produce showUnverifiedBadge: true. If a future edit to RowShell
 // accidentally drops this branch, this test (and the equivalent CI check in the dataset repo
