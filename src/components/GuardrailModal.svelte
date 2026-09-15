@@ -53,12 +53,30 @@
 
 <svelte:window on:keydown={handleKeydown} />
 
-<div class="backdrop" role="presentation" on:click={onCancel}>
+<!-- Clicking the backdrop dismisses, which is a mouse convenience only. The keyboard route
+     out is Escape, handled on svelte:window above -- it works from anywhere in the modal, so
+     it is strictly better than a handler bound to this element, which would require tabbing
+     to a presentational div first. The keydown here exists so the behaviour is declared on
+     the element the compiler checks, not to introduce a second, worse escape route. -->
+<div
+  class="backdrop"
+  role="presentation"
+  on:click={onCancel}
+  on:keydown={(e) => e.key === 'Escape' && onCancel()}
+>
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- This click handler is a sink, not a control: its whole job is to stop clicks inside the
+       dialog from reaching the backdrop's dismiss above. There is no action to reach by
+       keyboard, so satisfying the rule would mean inventing a keydown handler that does
+       nothing -- worse for a screen-reader user than the suppression. The dialog's real
+       keyboard contract (Escape to cancel, Tab wrapping inside the modal) lives in
+       handleKeydown on svelte:window and is covered by __tests__/GuardrailModal.a11y.test.ts. -->
   <div
     class="modal"
     role="dialog"
     aria-modal="true"
     aria-labelledby="guardrail-title"
+    tabindex="-1"
     bind:this={modalEl}
     on:click|stopPropagation
   >
