@@ -132,11 +132,19 @@
   <!-- A letter with no identifying details cannot locate anyone's record, so say so before the
        reader sends one. Shown next to the button rather than only inside the composed letter,
        so it is visible before they act. -->
+  <!-- Leads with the PAYOFF, not the defect. The warning used to say only what was broken
+       ("this letter can't identify you"), which is true but gives the reader no reason to go
+       to the profile page beyond fixing one letter. The actual bargain is that filling it in
+       once writes every future letter automatically -- and the email tier alone is dozens of
+       brokers, each otherwise needing the same details typed again by hand. Say that, then
+       say what is wrong. -->
   {#if noIdentifyingInfo}
     <p class="profile-warning">
-      <strong>This letter can't identify you yet.</strong> A broker needs at least a name and an
-      email address to find your record. <a href="/profile">Fill in your profile</a> and the
-      letter fills itself in — it stays on this device.
+      <strong>Fill in your profile once and these letters write themselves.</strong>
+      Right now this one has no name or email, so the broker has nothing to match you against —
+      and you would have to type your details into this letter and every other one by hand.
+      <a href="/profile">Set up your profile</a>. It stays on this device and is never sent
+      anywhere.
     </p>
   {:else if missingFields.length > 0}
     <p class="profile-warning subtle">
@@ -163,9 +171,10 @@
     <div class="letter">
       {#if noIdentifyingInfo}
         <p class="letter-missing">
-          <strong>Before you send this:</strong> it contains no name, email or address, so the
-          broker has nothing to match against. Add your details in the letter itself, or
-          <a href="/profile">fill in your profile</a> and write it again.
+          <strong>Before you send this:</strong> it has no name or email in it, so the broker
+          has nothing to match you against. Type your details into the letter below — or
+          <a href="/profile">fill in your profile</a> once and this letter, and every other
+          one, fills itself in from then on.
         </p>
       {:else if missingFields.length > 0}
         <p class="letter-missing subtle">
