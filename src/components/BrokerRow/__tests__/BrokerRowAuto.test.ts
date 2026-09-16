@@ -91,6 +91,11 @@ beforeEach(() => {
 });
 afterEach(() => nav.restore());
 
+/** Rendered prose carries the source's line wrapping; collapse it before matching. */
+function prose(el: Element | null): string {
+  return (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
+}
+
 async function composeIn(broker = makeBroker()) {
   const utils = render(BrokerRowAuto, { props: { broker, profile } });
   await fireEvent.click(utils.getByText('Write the opt-out email'));
@@ -222,12 +227,12 @@ describe('a letter that cannot identify the reader says so', () => {
   it('warns before composing, not only after', async () => {
     const { container } = renderWith(emptyProfile);
     const warning = container.querySelector('.profile-warning');
-    expect(warning?.textContent).toMatch(/can't identify you yet/i);
+    expect(warning?.textContent).toMatch(/nothing to match you against/i);
   });
 
   it('points at the profile page, where the fix is', async () => {
     const { getByRole } = renderWith(emptyProfile);
-    expect(getByRole('link', { name: /Fill in your profile/i }).getAttribute('href')).toBe('/profile');
+    expect(getByRole('link', { name: /Set up your profile/i }).getAttribute('href')).toBe('/profile');
   });
 
   it('repeats the warning inside the composed letter', async () => {
@@ -235,7 +240,7 @@ describe('a letter that cannot identify the reader says so', () => {
     await fireEvent.click(getByText('Write the opt-out email'));
     await tick();
     expect(container.querySelector('.letter-missing')?.textContent).toMatch(
-      /no name, email or address/i,
+      /no name or email in it/i,
     );
   });
 
@@ -300,5 +305,57 @@ describe('the letter is laid out for the task, not as a wall of text', () => {
     const body = container.querySelector('.letter-body') as HTMLElement | null;
     expect(body).not.toBeNull();
     expect(body?.style.maxHeight ?? '').toBe('');
+  });
+});
+
+describe('an empty profile is told what it gains, not only what is broken', () => {
+  // The warning used to say only that the letter could not identify the reader. True, but it
+  // gave them no reason to visit the profile page beyond fixing this one letter. The actual
+  // bargain is that filling it in ONCE writes every subsequent letter automatically, and the
+  // email tier alone is dozens of brokers that would otherwise each need the same details
+  // typed again by hand.
+  const emptyProfile: Profile = {
+    fullName: '', email: '', phone: '', address: '', city: '', state: '', zip: '', dob: '',
+  };
+
+  function renderEmpty() {
+    return render(BrokerRowAuto, { props: { broker: makeBroker(), profile: emptyProfile } });
+  }
+
+  it('leads with the payoff before naming the defect', async () => {
+    const { container } = renderEmpty();
+    const text = prose(container.querySelector('.profile-warning'));
+    expect(text).toMatch(/once/i);
+    expect(text).toMatch(/letters write themselves/i);
+  });
+
+  it('says the saving is recurring, not a one-letter fix', async () => {
+    const { container } = renderEmpty();
+    expect(prose(container.querySelector('.profile-warning'))).toMatch(
+      /every other one by hand/i,
+    );
+  });
+
+  it('repeats the offer inside the composed letter', async () => {
+    const { container, getByText } = renderEmpty();
+    await fireEvent.click(getByText('Write the opt-out email'));
+    await tick();
+    expect(prose(container.querySelector('.letter-missing'))).toMatch(
+      /every other one, fills itself in/i,
+    );
+  });
+
+  it('keeps the on-device promise next to the ask', async () => {
+    // The tease is asking for name, email and address. It has to carry the reason that is
+    // safe to give, in the same breath.
+    const { container } = renderEmpty();
+    const text = prose(container.querySelector('.profile-warning'));
+    expect(text).toMatch(/stays on this device/i);
+    expect(text).toMatch(/never sent anywhere/i);
+  });
+
+  it('does not tease a reader who already has a usable profile', async () => {
+    const { container } = render(BrokerRowAuto, { props: { broker: makeBroker(), profile } });
+    expect(container.querySelector('.profile-warning')).toBeNull();
   });
 });
