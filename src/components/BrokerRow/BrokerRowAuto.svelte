@@ -10,8 +10,6 @@
   let downloadUrl: string | null = null;
   let downloadName = '';
   let error: string | null = null;
-  let copiedAddress = false;
-  let copyFailed = false;
 
   // The composed letter, shown in the row once the reader asks for it.
   //
@@ -27,7 +25,7 @@
   // one click for people who have a mail client; it is now a convenience layered on top of a
   // path that always works rather than the only path.
   let letter: { subject: string; body: string; toEmail: string } | null = null;
-  let copiedPart: 'subject' | 'body' | 'all' | null = null;
+  let copiedPart: 'to' | 'subject' | 'body' | 'all' | null = null;
   let partCopyFailed = false;
 
   /** The mailto: href for this letter, once composed -- null when the letter is too long. */
@@ -99,14 +97,21 @@
     return `To: ${l.toEmail}\nSubject: ${l.subject}\n\n${l.body}`;
   }
 
-  async function copyPart(part: 'subject' | 'body' | 'all') {
+  async function copyPart(part: 'to' | 'subject' | 'body' | 'all') {
     if (!letter) return;
     const text =
-      part === 'subject' ? letter.subject : part === 'body' ? letter.body : fullLetterText(letter);
+      part === 'to'
+        ? letter.toEmail
+        : part === 'subject'
+          ? letter.subject
+          : part === 'body'
+            ? letter.body
+            : fullLetterText(letter);
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // Same reasoning as copyAddress() below: clipboard access can be refused outright. Say
+      // Clipboard access can be refused outright (permission denied, insecure context, or a
+      // document that isn't focused). Say
       // so plainly -- and unlike the assisted row, the text is rendered right here, so
       // selecting it by hand is always available as a fallback.
       partCopyFailed = true;
@@ -119,24 +124,6 @@
     }, 1500);
   }
 
-  // The address is shown as plain selectable text, never as a mailto: href -- a broker's
-  // address in an href is fine, but keeping every path here button-driven matches the rest
-  // of the row and leaves nothing for a mis-click to navigate away to.
-  async function copyAddress() {
-    if (!broker.opt_out_email) return;
-    try {
-      await navigator.clipboard.writeText(broker.opt_out_email);
-      copiedAddress = true;
-      setTimeout(() => (copiedAddress = false), 1500);
-    } catch {
-      // Clipboard access can be refused outright (permission denied, insecure context, or a
-      // document that isn't focused). Say so rather than throwing an unhandled rejection and
-      // leaving a button that looks like it did nothing -- the address is rendered as visible
-      // selectable text right next to this, so there is always a manual path.
-      copyFailed = true;
-      setTimeout(() => (copyFailed = false), 3000);
-    }
-  }
 </script>
 
 <div class="auto-action">
@@ -167,17 +154,10 @@
     of desktop browsers. Showing the destination address makes the row self-explanatory and
     gives a working manual path when the mailto: never fires.
   -->
-  {#if broker.opt_out_email}
-    <p class="address-line">
-      Sends to <span class="address">{broker.opt_out_email}</span>
-      <button class="copy-address" on:click={copyAddress}>
-        {copiedAddress ? 'copied' : 'copy'}
-      </button>
-      {#if copyFailed}
-        <span class="copy-failed" role="status">couldn't copy — select the address above</span>
-      {/if}
-    </p>
-  {/if}
+  <!-- The standalone "Sends to <address>" line is gone: the composed letter now shows To,
+       Subject and Message as labelled fields with their own copy controls, so this repeated
+       the address a second time directly above it. Before the letter is composed there is
+       nothing to send yet, and the button says what it will do. -->
 
   {#if letter}
     <div class="letter">
@@ -193,41 +173,58 @@
           before sending if you can.
         </p>
       {/if}
-      <p class="letter-lead">
-        Your mail app should have opened with this ready to send. <strong>If nothing opened</strong>
-        — common when you read mail in a browser tab rather than an app — copy it across
-        yourself. Nothing is sent from this page either way.
-      </p>
-
-      <dl class="letter-fields">
-        <dt>To</dt>
-        <dd class="mono">{letter.toEmail}</dd>
-        <dt>Subject</dt>
-        <dd class="mono">{letter.subject}</dd>
-      </dl>
-
-      <pre class="letter-body">{letter.body}</pre>
-
-      <div class="letter-actions" role="group" aria-label="Copy the request">
-        <button on:click={() => copyPart('all')}>
-          {copiedPart === 'all' ? 'copied' : 'Copy the whole thing'}
-        </button>
-        <button on:click={() => copyPart('subject')}>
-          {copiedPart === 'subject' ? 'copied' : 'Copy subject'}
-        </button>
-        <button on:click={() => copyPart('body')}>
-          {copiedPart === 'body' ? 'copied' : 'Copy message'}
+      <!-- Actions at the TOP. The old layout buried them under a scrolling letter body, so the
+           reader met a wall of monospace text before learning what they could do with it. The
+           lead paragraph here also used to claim "Your mail app should have opened with this" --
+           true only while composing auto-fired a mailto:, which it no longer does. -->
+      <div class="letter-top">
+        {#if mailtoHref}
+          <button class="send-btn" on:click={openInMailApp}>Send in my mail app</button>
+        {/if}
+        <button class="copy-all-btn" on:click={() => copyPart('all')}>
+          {copiedPart === 'all' ? 'Copied' : 'Copy all'}
         </button>
       </div>
       {#if mailtoHref}
-        <p class="mail-app-line">
-          <button class="mail-app-btn" on:click={openInMailApp}>Open in my mail app</button>
-          <span class="mail-app-note">
-            Only if you have one set up. If your computer offers to connect an account instead,
-            you can close that and copy the letter above.
-          </span>
+        <p class="mail-app-note">
+          Only if you have a mail app set up. If your computer offers to connect an account
+          instead, close that and copy the letter across by hand.
         </p>
       {/if}
+
+      <!-- Copy control per field, aligned in its own column. Webmail compose forms have
+           separate To / Subject / body inputs, so copying them one at a time is the actual
+           task -- three buttons in a row underneath made the reader match label to field. -->
+      <dl class="letter-fields">
+        <dt>To</dt>
+        <dd class="mono">{letter.toEmail}</dd>
+        <dd class="field-copy">
+          <button
+            class="icon-btn"
+            on:click={() => copyPart('to')}
+            aria-label="Copy the recipient address"
+          >
+            {copiedPart === 'to' ? 'copied' : 'copy'}
+          </button>
+        </dd>
+
+        <dt>Subject</dt>
+        <dd class="mono">{letter.subject}</dd>
+        <dd class="field-copy">
+          <button class="icon-btn" on:click={() => copyPart('subject')} aria-label="Copy the subject">
+            {copiedPart === 'subject' ? 'copied' : 'copy'}
+          </button>
+        </dd>
+
+        <dt>Message</dt>
+        <dd class="letter-body-cell"><pre class="letter-body">{letter.body}</pre></dd>
+        <dd class="field-copy">
+          <button class="icon-btn" on:click={() => copyPart('body')} aria-label="Copy the message">
+            {copiedPart === 'body' ? 'copied' : 'copy'}
+          </button>
+        </dd>
+      </dl>
+
       <p class="letter-status" aria-live="polite">
         {#if partCopyFailed}
           Couldn't copy — select the text above instead.
@@ -262,35 +259,6 @@
     color: var(--seal, #8a1c1c);
     font-size: 0.85rem;
   }
-  .address-line {
-    margin: 0;
-    font-size: 0.85rem;
-    color: var(--graphite, #6b6459);
-    display: flex;
-    align-items: baseline;
-    gap: 0.35rem;
-    flex-wrap: wrap;
-  }
-  .address {
-    font-family: 'Courier New', monospace;
-    color: var(--ink, #16130e);
-    /* Broker addresses can be long and have no spaces to break at -- same overflow risk the
-       guided-tier instructions have. */
-    overflow-wrap: anywhere;
-  }
-  .copy-address {
-    font-size: 0.8rem;
-    padding: 0.1rem 0.4rem;
-    border: 1px solid var(--rule, #c9c1b2);
-    border-radius: 3px;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-  }
-  .copy-failed {
-    font-size: 0.8rem;
-    color: var(--seal, #8a1c1c);
-  }
   .letter {
     border: 1px solid var(--rule, #c9c1b2);
     border-radius: 4px;
@@ -298,65 +266,96 @@
     max-width: 34rem;
     width: 100%;
   }
-  .letter-lead {
-    margin: 0 0 0.6rem;
+  .letter-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .send-btn {
     font-size: 0.85rem;
-    line-height: 1.45;
-    color: var(--graphite, #6b6459);
+    padding: 0.3rem 0.8rem;
+    border: none;
+    border-radius: 3px;
+    background: var(--seal-surface, #8a1c1c);
+    color: white;
+    cursor: pointer;
   }
-  .letter-lead strong {
-    color: var(--ink, #16130e);
+  .copy-all-btn {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--rule, #c9c1b2);
+    border-radius: 3px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
   }
+  /* label | value | copy. The copy column is sized to its content and sits hard right of the
+     value, so the three controls line up in a single vertical run down the letter. */
   .letter-fields {
-    margin: 0 0 0.6rem;
+    margin: 0;
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0.15rem 0.6rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.35rem 0.6rem;
     font-size: 0.85rem;
+    align-items: start;
   }
   .letter-fields dt {
     color: var(--graphite, #6b6459);
     text-transform: uppercase;
     font-size: 0.7rem;
     letter-spacing: 0.03em;
-    align-self: baseline;
+    padding-top: 0.15rem;
   }
   .letter-fields dd {
     margin: 0;
+    min-width: 0;
     /* Addresses and subjects can run long with nothing to break at. */
     overflow-wrap: anywhere;
   }
+  .field-copy {
+    justify-self: end;
+  }
+  .icon-btn {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.15rem 0.4rem;
+    border: 1px solid var(--rule, #c9c1b2);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--graphite, #6b6459);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .icon-btn:hover,
+  .icon-btn:focus-visible {
+    color: var(--seal, #8a1c1c);
+    border-color: var(--seal, #8a1c1c);
+  }
   .mono {
     font-family: 'Courier New', monospace;
+  }
+  .letter-body-cell {
+    /* The grid cell, not the <pre>, carries the width constraint -- a pre with its own
+       max-height was scrolling internally, so the letter arrived cut off mid-sentence. */
+    min-width: 0;
   }
   .letter-body {
     font-family: 'Courier New', monospace;
     font-size: 0.8rem;
     line-height: 1.5;
-    margin: 0 0 0.6rem;
+    margin: 0;
     padding: 0.6rem;
     background: color-mix(in srgb, var(--rule, #c9c1b2) 25%, transparent);
     border-radius: 3px;
     /* The letter is pre-formatted text and must keep its line breaks, but it also has to fit
-       a phone -- so wrap long lines rather than forcing a horizontal scroll inside the row. */
+       a phone -- so wrap long lines rather than forcing a horizontal scroll inside the row.
+       No max-height: the whole letter shows at once. It is ~20 lines, and an inner scrollbar
+       inside an already-scrolling page meant the reader saw a fragment starting mid-sentence
+       and had to scroll a box to read what they were about to send. */
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-    max-height: 18rem;
-    overflow-y: auto;
-  }
-  .letter-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
-  .letter-actions button {
-    font-size: 0.8rem;
-    padding: 0.25rem 0.6rem;
-    border: 1px solid var(--rule, #c9c1b2);
-    border-radius: 3px;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
   }
   .letter-status {
     margin: 0.4rem 0 0;
@@ -387,27 +386,12 @@
     color: var(--seal, #8a1c1c);
     font-weight: 600;
   }
-  .mail-app-line {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.4rem;
-    margin: 0.6rem 0 0;
-  }
-  .mail-app-btn {
-    font-size: 0.8rem;
-    padding: 0.25rem 0.6rem;
-    border: 1px solid var(--rule, #c9c1b2);
-    border-radius: 3px;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-  }
   .mail-app-note {
     font-size: 0.78rem;
     color: var(--graphite, #6b6459);
     line-height: 1.4;
-    flex: 1 1 14rem;
+    margin: 0 0 0.6rem;
+    max-width: 30rem;
   }
   .mailto-note {
     margin: 0;
