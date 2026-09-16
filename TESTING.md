@@ -62,10 +62,11 @@ this for months and can no longer see it fresh — you can, exactly once. Spend 
 
 ## Known-incomplete, so don't bother reporting
 
-- **Most entries are marked UNVERIFIED.** 456 of 493 as of dataset 0.1.15. That badge is
-  honest, not broken: it means a human has not yet confirmed the routing against the
-  broker's own page. Finding out that an unverified entry is *wrong* is exactly the
-  contribution we want — the badge tells you where to look.
+- **Most entries are marked "not formally checked".** That badge is honest, not broken, and
+  narrower than it sounds: every entry is drawn from published broker-opt-out research, and
+  an automated checker has been run against all of their links. What is missing is a *person*
+  confirming that broker's steps against its own page. Finding out that one of them is
+  *wrong* is exactly the contribution we want — the badge tells you where to look.
 - **The Harden section is thin.** Device-hardening guides are next, not done.
 - **Some brokers are dead.** Domains lapse constantly in this industry. Telling us a site no
   longer exists is a real fix — we drop them.
