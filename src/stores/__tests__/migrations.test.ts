@@ -71,9 +71,40 @@ describe('migrateProfile (import-time migration)', () => {
 
 describe('migrateProgress (import-time migration)', () => {
   it('migrates a version-0 (pre-versioning) export up to the current schema', () => {
+    // 0 -> 1 was shape-preserving; 1 -> 2 enriches {done,doneAt} into a state machine, so a
+    // v0 payload no longer round-trips unchanged -- it arrives with the new fields filled in.
     const raw = { 'spokeo-com': { done: true, doneAt: '2026-01-01' } };
     const migrated = migrateProgress(raw, 0);
-    expect(migrated).toEqual(raw);
+    expect(migrated['spokeo-com']).toEqual({
+      done: true,
+      doneAt: '2026-01-01',
+      status: 'confirmed',
+      submittedAt: '2026-01-01',
+      note: '',
+    });
+  });
+
+  it('reads a done entry as confirmed, reusing its timestamp as the submission date', () => {
+    // We never knew when the request was actually sent. Reusing the one timestamp we have
+    // beats inventing a submission date we do not.
+    const migrated = migrateProgress({ a: { done: true, doneAt: '2026-02-02' } }, 1);
+    expect(migrated.a.status).toBe('confirmed');
+    expect(migrated.a.submittedAt).toBe('2026-02-02');
+  });
+
+  it('reads a not-done entry as not_started, with no invented in-flight state', () => {
+    // There was no way to record an in-flight request before v2, so there is nothing to
+    // recover -- claiming one would be fabrication.
+    const migrated = migrateProgress({ a: { done: false, doneAt: null } }, 1);
+    expect(migrated.a.status).toBe('not_started');
+    expect(migrated.a.submittedAt).toBeNull();
+    expect(migrated.a.doneAt).toBeNull();
+  });
+
+  it('skips a malformed entry rather than failing the whole import', () => {
+    const migrated = migrateProgress({ good: { done: true, doneAt: '2026-01-01' }, bad: null }, 1);
+    expect(migrated.good.status).toBe('confirmed');
+    expect(migrated.bad).toBeUndefined();
   });
 
   it('treats undefined/null legacy data as an empty progress map rather than throwing', () => {
@@ -82,7 +113,18 @@ describe('migrateProgress (import-time migration)', () => {
   });
 
   it('passes through data already at the current schema version unchanged', () => {
-    const raw = { a: { done: true, doneAt: '2026-01-01' } };
+    // Fixture is a real v2 record, so this documents the current shape rather than an
+    // obsolete one. Passing a v1-shaped object here would still pass -- runMigrations does
+    // nothing when from === target -- which is exactly why the fixture has to be honest.
+    const raw = {
+      a: {
+        done: false,
+        doneAt: null,
+        status: 'submitted' as const,
+        submittedAt: '2026-01-01',
+        note: 'ref #12345',
+      },
+    };
     const migrated = migrateProgress(raw, PROGRESS_SCHEMA_VERSION);
     expect(migrated).toEqual(raw);
   });

@@ -112,6 +112,9 @@ export function isRecheckDue(
   progress: { done: boolean; doneAt: string | null },
   now: Date = new Date(),
 ): boolean {
+  // Keyed on doneAt (the CONFIRMED timestamp), never submittedAt. A request that was sent
+  // but not yet confirmed has no removal to re-check -- starting the clock at submission
+  // would tell someone a listing might have come back before it ever came down.
   if (!progress.done || !progress.doneAt || broker.readd_days === null) return false;
   const doneAt = new Date(progress.doneAt);
   if (Number.isNaN(doneAt.getTime())) return false;

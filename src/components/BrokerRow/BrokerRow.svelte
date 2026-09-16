@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Broker } from '../../lib/dataset/fetchAndVerify';
   import type { Profile } from '../../stores/profile';
-  import type { BrokerProgress } from '../../stores/progress';
+  import type { BrokerProgress, OptOutStatus } from '../../stores/progress';
   import RowShell from './RowShell.svelte';
   import BrokerRowAuto from './BrokerRowAuto.svelte';
   import BrokerRowAssisted from './BrokerRowAssisted.svelte';
@@ -12,6 +12,10 @@
   export let profile: Profile;
   export let progress: BrokerProgress;
   export let onToggle: () => void;
+  // Threaded straight through to RowShell, which owns the workflow UI. BrokerRow only
+  // dispatches by tier; it has no opinion about progress beyond passing it along.
+  export let onSetStatus: (status: OptOutStatus) => void;
+  export let onSetNote: (note: string) => void;
 
   const SENSITIVE_FIELDS = new Set(['ssn', 'gov_id', 'vin']);
   $: hasSensitiveFields = broker.required_fields.some((f) => SENSITIVE_FIELDS.has(f));
@@ -32,7 +36,7 @@
   }
 </script>
 
-<RowShell {broker} {progress} {onToggle} href={titleHref}>
+<RowShell {broker} {progress} {onToggle} {onSetStatus} {onSetNote} href={titleHref}>
   {#if needsGuardrail}
     <button class="reveal-action" on:click={requestAction}>Continue (sensitive info required)</button>
   {:else if broker.tier === 'auto'}

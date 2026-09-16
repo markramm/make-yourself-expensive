@@ -4,7 +4,7 @@
   import { loadDataset } from '../lib/dataset/useDataset';
   import { nextBatch, batchFromIds, type Batch } from '../lib/batching/nextBatch';
   import { profileStore } from '../stores/profile';
-  import { progressStore, isDone } from '../stores/progress';
+  import { progressStore, isDone, EMPTY_PROGRESS } from '../stores/progress';
   import { currentBatchIds } from '../stores/currentBatch';
   import BrokerRow from './BrokerRow/BrokerRow.svelte';
 
@@ -142,8 +142,10 @@
     <BrokerRow
       {broker}
       profile={$profileStore}
-      progress={$progressStore[broker.id] ?? { done: false, doneAt: null }}
+      progress={$progressStore[broker.id] ?? EMPTY_PROGRESS}
       onToggle={() => progressStore.toggle(broker.id)}
+      onSetStatus={(status) => progressStore.setStatus(broker.id, status)}
+      onSetNote={(note) => progressStore.setNote(broker.id, note)}
     />
   {/each}
 
