@@ -93,7 +93,7 @@ afterEach(() => nav.restore());
 
 async function composeIn(broker = makeBroker()) {
   const utils = render(BrokerRowAuto, { props: { broker, profile } });
-  await fireEvent.click(utils.getByText('Compose opt-out email'));
+  await fireEvent.click(utils.getByText('Write the opt-out email'));
   await tick();
   return utils;
 }
@@ -121,17 +121,27 @@ describe('the composed letter is shown, not just handed to a mail client', () =>
     expect(text).toContain('Acme Data');
   });
 
-  it('still attempts the mail client, so a registered app remains one click', async () => {
+  it('does NOT touch the mail client on compose', async () => {
+    // Firing the mailto: automatically is what ambushed a tester: on a Mac with no default
+    // mail client, the OS offers to connect one, and for Gmail that is an OAuth consent screen
+    // listing read/write/delete scopes on their own mailbox. It fired before they knew a
+    // letter existed. Composing now only composes.
     await composeIn();
+    expect(nav.assigned.some((h) => h.startsWith('mailto:'))).toBe(false);
+  });
+
+  it('opens the mail client only when the reader explicitly asks', async () => {
+    // Still one click for anyone who has a mail app -- just a click they chose to make.
+    const { getByText } = await composeIn();
+    await fireEvent.click(getByText('Open in my mail app'));
     expect(nav.assigned.some((h) => h.startsWith('mailto:'))).toBe(true);
   });
 
-  it('shows the letter even though the mailto was attempted', async () => {
-    // The whole point: the reader cannot tell whether the mailto fired, so the fallback
-    // cannot be gated on detecting failure.
+  it('warns that the machine may offer to connect an account instead', async () => {
     const { container } = await composeIn();
-    expect(nav.assigned.some((h) => h.startsWith('mailto:'))).toBe(true);
-    expect(container.querySelector('.letter-body')).not.toBeNull();
+    const note = container.querySelector('.mail-app-note')?.textContent ?? '';
+    expect(note).toMatch(/offers to connect an account/i);
+    expect(note).toMatch(/copy the letter/i);
   });
 });
 
@@ -193,5 +203,59 @@ describe('composing a request that cannot be built', () => {
     const { container } = await composeIn(makeBroker({ opt_out_email: null }));
     expect(container.querySelector('.letter-body')).toBeNull();
     expect(container.querySelector('.error')).not.toBeNull();
+  });
+});
+
+describe('a letter that cannot identify the reader says so', () => {
+  // composeRequest() omits profile fields that are blank. With an empty profile that yields a
+  // letter whose "My identifying information for locating my record:" header is followed by
+  // nothing at all, and an unsigned "Thank you," -- unusable by a broker, and the reader was
+  // given no sign anything was wrong.
+  const emptyProfile: Profile = {
+    fullName: '', email: '', phone: '', address: '', city: '', state: '', zip: '', dob: '',
+  };
+
+  function renderWith(p: Profile) {
+    return render(BrokerRowAuto, { props: { broker: makeBroker(), profile: p } });
+  }
+
+  it('warns before composing, not only after', async () => {
+    const { container } = renderWith(emptyProfile);
+    const warning = container.querySelector('.profile-warning');
+    expect(warning?.textContent).toMatch(/can't identify you yet/i);
+  });
+
+  it('points at the profile page, where the fix is', async () => {
+    const { getByRole } = renderWith(emptyProfile);
+    expect(getByRole('link', { name: /Fill in your profile/i }).getAttribute('href')).toBe('/profile');
+  });
+
+  it('repeats the warning inside the composed letter', async () => {
+    const { container, getByText } = renderWith(emptyProfile);
+    await fireEvent.click(getByText('Write the opt-out email'));
+    await tick();
+    expect(container.querySelector('.letter-missing')?.textContent).toMatch(
+      /no name, email or address/i,
+    );
+  });
+
+  it('names which fields are missing on a partly-filled profile', async () => {
+    const { container } = renderWith({ ...emptyProfile, fullName: 'Jane Q Public', email: 'j@example.test' });
+    const warning = container.querySelector('.profile-warning');
+    expect(warning?.textContent).toMatch(/postal address/i);
+    expect(warning?.textContent).not.toMatch(/full name/i);
+  });
+
+  it('says nothing when the profile can actually identify the reader', async () => {
+    const { container } = renderWith(profile);
+    expect(container.querySelector('.profile-warning')).toBeNull();
+  });
+
+  it('still composes the letter, rather than blocking on a missing profile', async () => {
+    // The reader may want to paste their own details in by hand. Warn, do not obstruct.
+    const { container, getByText } = renderWith(emptyProfile);
+    await fireEvent.click(getByText('Write the opt-out email'));
+    await tick();
+    expect(container.querySelector('.letter-body')).not.toBeNull();
   });
 });
