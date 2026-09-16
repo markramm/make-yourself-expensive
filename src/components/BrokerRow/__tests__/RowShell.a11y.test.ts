@@ -112,16 +112,27 @@ describe('RowShell: screen-reader announcement', () => {
 });
 
 describe('RowShell: badge rendering matches badgeContract', () => {
-  it('renders the unverified badge when last_verified is null', () => {
-    // The load-bearing contract from badgeContract.ts, checked at the render layer this
-    // time -- the pure function can stay correct while the template drops the branch.
+  it('renders the not-formally-checked badge when last_verified is null', () => {
+    // The badge LOGIC is the load-bearing contract (badgeContract.ts); this asserts the row
+    // actually renders it. The label reads "not formally checked" rather than "unverified":
+    // every entry is drawn from published research and an automated link check, so the
+    // stronger word overstated what is missing and invited readers to discount the dataset.
     const { getByText } = renderRow(makeBroker({ last_verified: null }), notDone);
-    expect(getByText('unverified')).toBeTruthy();
+    expect(getByText('not formally checked')).toBeTruthy();
   });
 
-  it('omits the unverified badge once an entry has been verified', () => {
+  it('omits the badge once a person has confirmed the entry', () => {
     const { queryByText } = renderRow(makeBroker({ last_verified: '2026-01-01' }), notDone);
-    expect(queryByText('unverified')).toBeNull();
+    expect(queryByText('not formally checked')).toBeNull();
+  });
+
+  it('says what is actually missing, not that nobody looked', () => {
+    // The tooltip has to carry the distinction the short label cannot: researched and
+    // link-checked, but this specific routing is unconfirmed by a human.
+    const { getByText } = renderRow(makeBroker({ last_verified: null }), notDone);
+    const title = getByText('not formally checked').getAttribute('title') ?? '';
+    expect(title).toMatch(/research/i);
+    expect(title).toMatch(/no person has confirmed/i);
   });
 
   it('warns that a broken link may be dead without calling it definitely gone', () => {

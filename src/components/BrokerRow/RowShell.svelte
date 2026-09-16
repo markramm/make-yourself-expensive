@@ -55,9 +55,20 @@
           {badge.linkWarning}
         </span>
       {/if}
+      <!-- "unverified" overstated what is missing. It reads as "nobody looked at this", which
+           is not true of any entry here: every one is drawn from published broker-opt-out
+           research, and link_status comes from an automated checker that ran against all 493.
+           What is actually absent is a person confirming THIS routing against the broker's own
+           page. On 456 of 493 rows, the stronger word invited a reader to discount the whole
+           dataset as guesswork -- understating the work rather than being honest about it.
+           The badge logic is untouched: last_verified === null still shows it, per the
+           contract test in badgeContract.ts. This is the label and tooltip only. -->
       {#if badge.showUnverifiedBadge}
-        <span class="unverified-badge" title="A human hasn't confirmed this entry against the broker's own page yet">
-          unverified
+        <span
+          class="unverified-badge"
+          title="Drawn from published opt-out research and an automated link check, but no person has confirmed this broker's steps against their own page yet. If you follow it through, tell us what you find."
+        >
+          not formally checked
         </span>
       {/if}
       {#if recheckDue}
