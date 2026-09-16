@@ -1,12 +1,16 @@
 <script lang="ts">
   import type { Broker } from '../../lib/dataset/fetchAndVerify';
-  import type { BrokerProgress } from '../../stores/progress';
+  import type { BrokerProgress, OptOutStatus } from '../../stores/progress';
+  import { isInFlight } from '../../stores/progress';
   import { badgeDecisionFor, isRecheckDue } from './badgeContract';
   import { brokerReportUrl } from '../../lib/reportLink';
+  import OptOutWorkflow from './OptOutWorkflow.svelte';
 
   export let broker: Broker;
   export let progress: BrokerProgress;
   export let onToggle: () => void;
+  export let onSetStatus: (status: OptOutStatus) => void;
+  export let onSetNote: (note: string) => void;
   // The broker's own opt-out page, when one exists. The title IS the primary action --
   // clicking the name opens the opt-out page directly, rather than making the reader hunt
   // for a separately-styled "Open opt-out page" link elsewhere in the row. Phone-only
@@ -15,6 +19,9 @@
   export let href: string | null = null;
 
   $: done = progress.done;
+  // A submitted-but-unconfirmed row used to look identical to an untouched one, which is
+  // exactly the state a reader comes back to check on.
+  $: inFlight = isInFlight(progress);
   $: badge = badgeDecisionFor(broker);
   $: recheckDue = isRecheckDue(broker, progress);
 
@@ -32,7 +39,7 @@
   }
 </script>
 
-<div class="row" class:done>
+<div class="row" class:done class:in-flight={inFlight}>
   <label class="check-target">
     <input
       type="checkbox"
@@ -71,6 +78,14 @@
           not formally checked
         </span>
       {/if}
+      {#if inFlight}
+        <span
+          class="waiting-badge"
+          title="You have sent this request but the broker has not confirmed yet. Brokers often take days -- open 'Track this one' to see how long it has been."
+        >
+          {progress.status === 'awaiting_verification' ? 'waiting on them' : 'sent'}
+        </span>
+      {/if}
       {#if recheckDue}
         <span
           class="recheck-badge"
@@ -82,6 +97,14 @@
     </div>
 
     <slot />
+
+    <OptOutWorkflow
+      brokerName={broker.name}
+      brokerId={broker.id}
+      {progress}
+      {onSetStatus}
+      {onSetNote}
+    />
 
     <!-- Every row carries this, not just the 17 with no known route. /testing calls "follow
          one broker the whole way" the most valuable report this project gets, and until now
@@ -233,6 +256,17 @@
     border: 1px solid var(--seal, #8a1c1c);
     color: var(--seal, #8a1c1c);
   }
+  .waiting-badge {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.1rem 0.4rem;
+    border-radius: 2px;
+    border: 1px dashed var(--seal, #8a1c1c);
+    color: var(--seal, #8a1c1c);
+  }
+  /* In-flight rows stay at full strength: they are live work, not finished work. Only the
+     `done` dimming applies, and the two states are mutually exclusive. */
 
   @media (prefers-reduced-motion: no-preference) {
     .row.done .name {

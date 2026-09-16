@@ -46,11 +46,25 @@ function makeBroker(overrides: Partial<Broker> = {}): Broker {
   };
 }
 
-const notDone: BrokerProgress = { done: false, doneAt: null };
-const done: BrokerProgress = { done: true, doneAt: '2026-01-01T00:00:00.000Z' };
+const notDone: BrokerProgress = {
+  done: false,
+  doneAt: null,
+  status: 'not_started',
+  submittedAt: null,
+  note: '',
+};
+const done: BrokerProgress = {
+  done: true,
+  doneAt: '2026-01-01T00:00:00.000Z',
+  status: 'confirmed',
+  submittedAt: '2026-01-01T00:00:00.000Z',
+  note: '',
+};
 
 function renderRow(broker: Broker, progress: BrokerProgress, onToggle = () => {}) {
-  return render(RowShell, { props: { broker, progress, onToggle, href: null } });
+  return render(RowShell, {
+    props: { broker, progress, onToggle, href: null, onSetStatus: () => {}, onSetNote: () => {} },
+  });
 }
 
 describe('RowShell: checkbox labelling', () => {
@@ -167,6 +181,8 @@ describe('RowShell: the broker name as the primary action', () => {
         broker: makeBroker(),
         progress: notDone,
         onToggle: () => {},
+        onSetStatus: () => {},
+        onSetNote: () => {},
         href: 'https://acme.test/opt-out',
       },
     });
@@ -201,6 +217,8 @@ describe('RowShell: every row can be reported on', () => {
         broker: makeBroker(),
         progress: notDone,
         onToggle: () => {},
+        onSetStatus: () => {},
+        onSetNote: () => {},
         href: 'https://acme.test/opt-out',
       },
     });

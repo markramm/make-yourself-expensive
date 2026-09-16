@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { nextBatch, batchFromIds, sortForBatching, weightFor, DEFAULT_BATCH_WEIGHT, batchScoreFor } from '../nextBatch';
 import type { Broker } from '../../dataset/fetchAndVerify';
-import type { ProgressMap } from '../../../stores/progress';
+import type { ProgressMap, BrokerProgress } from '../../../stores/progress';
+
+/** A confirmed-removal record. Batching only reads `done`, but ProgressMap requires the
+ *  full v2 shape -- see stores/progress.ts for why progress is a state machine now. */
+function doneEntry(at = '2026-01-01'): BrokerProgress {
+  return { done: true, doneAt: at, status: "confirmed", submittedAt: at, note: "" };
+}
 
 function makeBroker(overrides: Partial<Broker> & Pick<Broker, 'id' | 'tier' | 'priority'>): Broker {
   return {
@@ -68,7 +74,7 @@ describe('sortForBatching', () => {
 describe('nextBatch', () => {
   it('returns null when there is nothing undone', () => {
     const brokers = [makeBroker({ id: 'a', priority: 'crucial', tier: 'auto' })];
-    const progress: ProgressMap = { a: { done: true, doneAt: '2026-01-01' } };
+    const progress: ProgressMap = { a: doneEntry('2026-01-01') };
     expect(nextBatch(brokers, progress)).toBeNull();
   });
 
@@ -113,7 +119,7 @@ describe('nextBatch', () => {
       makeBroker({ id: 'b', priority: 'crucial', tier: 'auto' }),
       makeBroker({ id: 'c', priority: 'crucial', tier: 'auto' }),
     ];
-    const progress: ProgressMap = { a: { done: true, doneAt: '2026-01-01' } };
+    const progress: ProgressMap = { a: doneEntry('2026-01-01') };
     const batch = nextBatch(brokers, progress, 8);
     expect(batch!.items.map((b) => b.id)).toEqual(['b', 'c']);
   });
@@ -176,7 +182,7 @@ describe('batchFromIds -- resuming a persisted in-progress batch', () => {
   });
 
   it('reflects live completion state -- marking an item done elsewhere shows up without changing batch membership', () => {
-    const progress = { a: { done: true, doneAt: '2026-01-01' } };
+    const progress = { a: doneEntry('2026-01-01') };
     const batch = batchFromIds(brokers, ['a', 'b'], progress);
     // 'a' is done but stays IN the batch -- it doesn't vanish, matching the component's
     // "struck-through but still visible" behavior.
@@ -187,8 +193,8 @@ describe('batchFromIds -- resuming a persisted in-progress batch', () => {
 
   it('marks isFinalBatch true once every other broker is also done', () => {
     const progress = {
-      c: { done: true, doneAt: '2026-01-01' },
-      d: { done: true, doneAt: '2026-01-01' },
+      c: doneEntry('2026-01-01'),
+      d: doneEntry('2026-01-01'),
     };
     const batch = batchFromIds(brokers, ['a', 'b'], progress);
     expect(batch!.remainingAfterBatch).toBe(0);
