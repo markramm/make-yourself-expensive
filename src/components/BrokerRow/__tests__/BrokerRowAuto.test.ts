@@ -101,7 +101,7 @@ async function composeIn(broker = makeBroker()) {
 describe('the composed letter is shown, not just handed to a mail client', () => {
   it('renders nothing before the reader asks for it', () => {
     const { queryByText } = render(BrokerRowAuto, { props: { broker: makeBroker(), profile } });
-    expect(queryByText(/Copy the whole thing/)).toBeNull();
+    expect(queryByText(/Copy all/)).toBeNull();
   });
 
   it('shows the letter body after composing', async () => {
@@ -133,7 +133,7 @@ describe('the composed letter is shown, not just handed to a mail client', () =>
   it('opens the mail client only when the reader explicitly asks', async () => {
     // Still one click for anyone who has a mail app -- just a click they chose to make.
     const { getByText } = await composeIn();
-    await fireEvent.click(getByText('Open in my mail app'));
+    await fireEvent.click(getByText('Send in my mail app'));
     expect(nav.assigned.some((h) => h.startsWith('mailto:'))).toBe(true);
   });
 
@@ -158,7 +158,7 @@ describe('copying the letter', () => {
   it('copies the whole letter including the destination address', async () => {
     const writeText = stubClipboard(async () => {});
     const { getByText } = await composeIn();
-    await fireEvent.click(getByText('Copy the whole thing'));
+    await fireEvent.click(getByText('Copy all'));
     const copied = writeText.mock.calls[0][0] as string;
     expect(copied).toContain('To: privacy@acme.test');
     expect(copied).toContain('Subject:');
@@ -167,12 +167,12 @@ describe('copying the letter', () => {
 
   it('copies the subject and the message separately, for a compose form with two fields', async () => {
     const writeText = stubClipboard(async () => {});
-    const { getByText } = await composeIn();
-    await fireEvent.click(getByText('Copy subject'));
+    const { getByRole } = await composeIn();
+    await fireEvent.click(getByRole('button', { name: /Copy the subject/i }));
     expect(writeText.mock.calls[0][0]).toContain('Acme Data');
     expect(writeText.mock.calls[0][0]).not.toContain('To: ');
 
-    await fireEvent.click(getByText('Copy message'));
+    await fireEvent.click(getByRole('button', { name: /Copy the message/i }));
     expect(writeText.mock.calls[1][0]).toContain('Jane Q Public');
   });
 
@@ -181,7 +181,7 @@ describe('copying the letter', () => {
       throw new Error('denied');
     });
     const { getByText, container } = await composeIn();
-    await fireEvent.click(getByText('Copy the whole thing'));
+    await fireEvent.click(getByText('Copy all'));
     await tick();
     expect(container.querySelector('.letter-status')?.textContent).toMatch(/couldn't copy/i);
   });
@@ -191,7 +191,7 @@ describe('copying the letter', () => {
       throw new Error('denied');
     });
     const { getByText, container } = await composeIn();
-    await fireEvent.click(getByText('Copy the whole thing'));
+    await fireEvent.click(getByText('Copy all'));
     await tick();
     expect(container.querySelector('.letter-body')?.textContent).toContain('Jane Q Public');
   });
@@ -257,5 +257,48 @@ describe('a letter that cannot identify the reader says so', () => {
     await fireEvent.click(getByText('Write the opt-out email'));
     await tick();
     expect(container.querySelector('.letter-body')).not.toBeNull();
+  });
+});
+
+describe('the letter is laid out for the task, not as a wall of text', () => {
+  it('puts the send and copy-all actions above the letter, not below it', async () => {
+    // They used to sit under a scrolling body, so the reader met the monospace wall first and
+    // only then learned what they could do with it.
+    const { container } = await composeIn();
+    const top = container.querySelector('.letter-top');
+    expect(top).not.toBeNull();
+    expect(top?.textContent).toMatch(/Send in my mail app/);
+    expect(top?.textContent).toMatch(/Copy all/);
+  });
+
+  it('gives every field its own copy control', async () => {
+    const { getByRole } = await composeIn();
+    expect(getByRole('button', { name: /Copy the recipient address/i })).toBeTruthy();
+    expect(getByRole('button', { name: /Copy the subject/i })).toBeTruthy();
+    expect(getByRole('button', { name: /Copy the message/i })).toBeTruthy();
+  });
+
+  it('copies just the recipient address from its own control', async () => {
+    const writeText = vi.fn(async (_text: string) => {});
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    const { getByRole } = await composeIn();
+    await fireEvent.click(getByRole('button', { name: /Copy the recipient address/i }));
+    expect(writeText).toHaveBeenCalledWith('privacy@acme.test');
+  });
+
+  it('does not repeat the address above the letter', async () => {
+    // The composed letter shows To as a labelled field; a standalone "Sends to ..." line
+    // directly above it said the same thing twice.
+    const { container } = await composeIn();
+    expect(container.querySelector('.address-line')).toBeNull();
+  });
+
+  it('shows the whole letter rather than an inner scrollbox', async () => {
+    // An 18rem max-height inside an already-scrolling page meant the reader saw a fragment
+    // starting mid-sentence and had to scroll a box to read what they were about to send.
+    const { container } = await composeIn();
+    const body = container.querySelector('.letter-body') as HTMLElement | null;
+    expect(body).not.toBeNull();
+    expect(body?.style.maxHeight ?? '').toBe('');
   });
 });
